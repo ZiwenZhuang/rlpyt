@@ -18,13 +18,13 @@ def build_and_train(game="pong", run_ID=0):
     affinity = make_affinity(
         run_slot=0,
         n_cpu_core=8,  # Use 16 cores across all experiments.
-        n_gpu=2,  # Use 8 gpus across all experiments.
+        n_gpu=4,  # Use 8 gpus across all experiments.
         gpu_per_run=1,
         sample_gpu_per_run=1,
         async_sample=True,
         optim_sample_share_gpu=False,
         # hyperthread_offset=24,  # If machine has 24 cores.
-        # n_socket=2,  # Presume CPU socket affinity to lower/upper half GPUs.
+        n_socket=2,  # Presume CPU socket affinity to lower/upper half GPUs.
         # gpu_per_run=2,  # How many GPUs to parallelize one run across.
         # cpu_per_run=1,
     )
@@ -50,7 +50,7 @@ def build_and_train(game="pong", run_ID=0):
         algo=algo,
         agent=agent,
         sampler=sampler,
-        n_steps=2e6,
+        n_steps=5e7,
         log_interval_steps=1e4,
         affinity=affinity,
     )
