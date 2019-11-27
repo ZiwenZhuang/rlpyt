@@ -15,6 +15,17 @@ AgentStep = namedarraytuple("AgentStep", ["action", "agent_info"])
 
 
 class BaseAgent:
+    ''' The base api for wrapping policy network that finally outputs the action.
+        The math modelling will be implemented inside this classes.
+
+        speical APIs:
+        -------------
+            initialize: the entrance of how this agent will be initialized, usually \
+called via runner.
+            make_env_to_model_kwargs: a function produce kwargs that tells how \
+environment is configured (such as observation space as well as action \
+space)
+    '''
 
     recurrent = False
     alternating = False
