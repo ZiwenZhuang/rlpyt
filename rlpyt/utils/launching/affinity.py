@@ -127,7 +127,11 @@ def affinity_from_code(run_slot_affinity_code):
 
 
 def make_affinity(run_slot=0, **kwargs):
-    """Input same kwargs as encode_affinity, returns the AttrDict form."""
+    """ Input same kwargs as encode_affinity, returns the AttrDict form.
+    
+        Affinity: a dictionary-like configuration tells you which devices 
+        are used to run this experiment.
+    """
     return affinity_from_code(encode_affinity(run_slot=run_slot, **kwargs))
 
 

@@ -11,6 +11,8 @@ LOG_DIR = osp.abspath(osp.join(osp.dirname(__file__), '../../../data'))
 
 
 def get_log_dir(experiment_name):
+    """ return string of "$RLPYT_PATH/data/local/$date/$experiment_name/"
+    """
     yyyymmdd = datetime.datetime.today().strftime("%Y%m%d")
     log_dir = osp.join(LOG_DIR, "local", yyyymmdd, experiment_name)
     return log_dir

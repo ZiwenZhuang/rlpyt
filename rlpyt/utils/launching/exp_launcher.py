@@ -19,11 +19,16 @@ def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
 
 
 def log_num_launched(exp_dir, n, total):
+    """ write the total number of experiment launched into $exp_dir/num_launched.txt
+    """
     with open(osp.join(exp_dir, "num_launched.txt"), "w") as f:
         f.write(f"Experiments launched so far: {n} out of {total}.\n")
 
 
 def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID, args):
+    """ @ script: the name of experiment script you wish to run
+        @ variant: a dict-like object that tells the experiment configuration
+    """
     slot_affinity_code = prepend_run_slot(run_slot, affinity_code)
     affinity = affinity_from_code(slot_affinity_code)
     call_list = list()
@@ -45,7 +50,10 @@ def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID,
 
 def run_experiments(script, affinity_code, experiment_title, runs_per_setting,
         variants, log_dirs, common_args=None, runs_args=None):
-    n_run_slots = get_n_run_slots(affinity_code)
+    """ @ variants: a list of dict-like object that tells each experiment configuration.
+        @ log_dirs: the dir name inside exp_dir, it has to have the same length as variants.
+    """
+    n_run_slots = get_n_run_slots(affinity_code) # the number of experiment run in parallel
     exp_dir = get_log_dir(experiment_title)
     procs = [None] * n_run_slots
     common_args = () if common_args is None else common_args
@@ -61,6 +69,7 @@ def run_experiments(script, affinity_code, experiment_title, runs_per_setting,
             log_dir = osp.join(exp_dir, log_dir)
             os.makedirs(log_dir, exist_ok=True)
             while not launched:
+                # iterate through 'procs' to find a slot to launch one experiment.
                 for run_slot, p in enumerate(procs):
                     if p is None or p.poll() is not None:
                         procs[run_slot] = launch_experiment(
