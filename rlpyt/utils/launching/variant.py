@@ -11,6 +11,9 @@ VariantLevel = namedtuple("VariantLevel", ["keys", "values", "dir_names"])
 
 
 def make_variants(*variant_levels):
+    """ Given a list of variant_levels, do _cross_variants to generate
+    a list of variant conbinations and the sub-directory that they should stay.
+    """
     variants, log_dirs = [dict()], [""]
     for variant_level in variant_levels:
         variants, log_dirs = _cross_variants(variants, log_dirs, variant_level)

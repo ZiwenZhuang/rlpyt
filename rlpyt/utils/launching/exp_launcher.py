@@ -10,6 +10,9 @@ from rlpyt.utils.launching.variant import save_variant
 
 
 def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
+    """ write the experiment process ID and their log_dir names
+    into $exp_dir/experiments_tree.txt
+    """
     os.makedirs(exp_dir, exist_ok=True)
     with open(osp.join(exp_dir, "experiments_tree.txt"), "w") as f:
         f.write(f"Experiment manager process ID: {os.getpid()}.\n")
@@ -53,7 +56,7 @@ def run_experiments(script, affinity_code, experiment_title, runs_per_setting,
     """ @ variants: a list of dict-like object that tells each experiment configuration.
         @ log_dirs: the dir name inside exp_dir, it has to have the same length as variants.
     """
-    n_run_slots = get_n_run_slots(affinity_code) # the number of experiment run in parallel
+    n_run_slots = get_n_run_slots(affinity_code)
     exp_dir = get_log_dir(experiment_title)
     procs = [None] * n_run_slots
     common_args = () if common_args is None else common_args
