@@ -3,7 +3,7 @@ import numpy as np
 
 from rlpyt.agents.base import AgentInputs
 from rlpyt.utils.synchronize import drain_queue
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 
 
 EVAL_TRAJ_CHECK = 20  # [steps].

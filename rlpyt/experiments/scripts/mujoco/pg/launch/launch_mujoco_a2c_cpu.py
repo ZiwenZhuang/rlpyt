@@ -1,7 +1,7 @@
 
-from rlpyt.utils.launching.affinity import encode_affinity
-from rlpyt.utils.launching.exp_launcher import run_experiments
-from rlpyt.utils.launching.variant import make_variants, VariantLevel
+from exptools.launching.affinity import encode_affinity
+from exptools.launching.exp_launcher import run_experiments
+from exptools.launching.variant import make_variants, VariantLevel
 
 script = "rlpyt/experiments/scripts/mujoco/pg/train/mujoco_ff_a2c_cpu.py"
 affinity_code = encode_affinity(

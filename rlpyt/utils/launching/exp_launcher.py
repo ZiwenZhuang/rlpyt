@@ -4,9 +4,9 @@ import time
 import os
 import os.path as osp
 
-from rlpyt.utils.launching.affinity import get_n_run_slots, prepend_run_slot, affinity_from_code
-from rlpyt.utils.logging.context import get_log_dir
-from rlpyt.utils.launching.variant import save_variant
+from exptools.launching.affinity import get_n_run_slots, prepend_run_slot, affinity_from_code
+from exptools.logging.context import get_log_dir
+from exptools.launching.variant import save_variant
 
 
 def log_exps_tree(exp_dir, log_dirs, runs_per_setting):

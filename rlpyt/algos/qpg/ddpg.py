@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from rlpyt.algos.base import RlAlgorithm
 from rlpyt.utils.quick_args import save__init__args
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.replays.non_sequence.uniform import (UniformReplayBuffer,
     AsyncUniformReplayBuffer)
 from rlpyt.replays.non_sequence.time_limit import (TlUniformReplayBuffer,

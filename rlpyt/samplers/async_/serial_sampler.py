@@ -6,7 +6,7 @@ from rlpyt.samplers.base import BaseSampler
 from rlpyt.samplers.async_.base import AsyncSamplerMixin
 from rlpyt.samplers.serial.collectors import SerialEvalCollector
 from rlpyt.samplers.async_.collectors import DbCpuResetCollector
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.utils.collections import AttrDict
 
 

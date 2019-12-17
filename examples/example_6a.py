@@ -8,15 +8,15 @@ whether to reset environments in middle of sampling batch.
 """
 import sys
 
-from rlpyt.utils.launching.affinity import affinity_from_code
+from exptools.launching.affinity import affinity_from_code
 from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.gpu.collectors import GpuWaitResetCollector
 from rlpyt.envs.atari.atari_env import AtariEnv
 from rlpyt.algos.pg.a2c import A2C
 from rlpyt.agents.pg.atari import AtariFfAgent
 from rlpyt.runners.minibatch_rl import MinibatchRl
-from rlpyt.utils.logging.context import logger_context
-from rlpyt.utils.launching.variant import load_variant, update_config
+from exptools.logging.context import logger_context
+from exptools.launching.variant import load_variant, update_config
 
 
 def build_and_train(slot_affinity_code, log_dir, run_ID):

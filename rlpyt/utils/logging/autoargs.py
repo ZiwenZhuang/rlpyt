@@ -1,7 +1,7 @@
 
 import inspect
 
-from rlpyt.utils.logging.console import colorize
+from exptools.logging.console import colorize
 
 
 # pylint: disable=redefined-builtin

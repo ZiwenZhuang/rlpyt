@@ -6,7 +6,7 @@ import time
 from rlpyt.samplers.base import BaseSampler
 from rlpyt.samplers.buffer import build_samples_buffer
 from rlpyt.samplers.parallel.worker import sampling_process
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.utils.collections import AttrDict
 from rlpyt.utils.synchronize import drain_queue
 

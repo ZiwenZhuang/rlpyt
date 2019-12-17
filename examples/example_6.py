@@ -19,9 +19,9 @@ variant levels constructed here.
 
 """
 
-from rlpyt.utils.launching.affinity import encode_affinity, quick_affinity_code
-from rlpyt.utils.launching.exp_launcher import run_experiments
-from rlpyt.utils.launching.variant import make_variants, VariantLevel
+from exptools.launching.affinity import encode_affinity, quick_affinity_code
+from exptools.launching.exp_launcher import run_experiments
+from exptools.launching.variant import make_variants, VariantLevel
 
 # Either manually set the resources for the experiment:
 affinity_code = encode_affinity(

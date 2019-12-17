@@ -15,14 +15,14 @@ so total batch size grows with the number of parallel runners.
 Try different affinity inputs to see where the jobs run on the machine.
 
 """
-from rlpyt.utils.launching.affinity import make_affinity
+from exptools.launching.affinity import make_affinity
 from rlpyt.samplers.parallel.gpu.sampler import GpuSampler
 from rlpyt.samplers.parallel.gpu.collectors import GpuWaitResetCollector
 from rlpyt.envs.atari.atari_env import AtariEnv
 from rlpyt.algos.pg.a2c import A2C
 from rlpyt.agents.pg.atari import AtariFfAgent
 from rlpyt.runners.sync_rl import SyncRl
-from rlpyt.utils.logging.context import logger_context
+from exptools.logging.context import logger_context
 
 
 def build_and_train(game="pong", run_ID=0):

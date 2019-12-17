@@ -8,7 +8,7 @@ from collections import deque
 from rlpyt.runners.base import BaseRunner
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.utils.seed import set_seed, make_seed
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.utils.prog_bar import ProgBarCounter
 
 

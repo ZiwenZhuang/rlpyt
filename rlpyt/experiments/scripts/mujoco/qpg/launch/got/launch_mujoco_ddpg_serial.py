@@ -1,7 +1,7 @@
 
-from rlpyt.utils.launching.affinity import encode_affinity
-from rlpyt.utils.launching.exp_launcher import run_experiments
-from rlpyt.utils.launching.variant import make_variants, VariantLevel
+from exptools.launching.affinity import encode_affinity
+from exptools.launching.exp_launcher import run_experiments
+from exptools.launching.variant import make_variants, VariantLevel
 
 default_config_key = "ddpg_from_td3_1M_serial"
 script = "rlpyt/experiments/scripts/mujoco/qpg/train/mujoco_ddpg_serial.py"

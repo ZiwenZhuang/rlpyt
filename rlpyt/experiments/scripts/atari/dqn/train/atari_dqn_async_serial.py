@@ -1,7 +1,7 @@
 
 import sys
 
-from rlpyt.utils.launching.affinity import affinity_from_code
+from exptools.launching.affinity import affinity_from_code
 # from rlpyt.samplers.cpu.parallel_sampler import CpuParallelSampler
 from rlpyt.samplers.async_.async_serial_sampler import AsyncSerialSampler
 # from rlpyt.samplers.cpu.collectors import WaitResetCollector
@@ -11,8 +11,8 @@ from rlpyt.algos.dqn.dqn import DQN
 from rlpyt.agents.dqn.atari.atari_dqn_agent import AtariDqnAgent
 # from rlpyt.runners.minibatch_rl_eval import MinibatchRlEval
 from rlpyt.runners.async_rl import AsyncRlEval
-from rlpyt.utils.logging.context import logger_context
-from rlpyt.utils.launching.variant import load_variant, update_config
+from exptools.logging.context import logger_context
+from exptools.launching.variant import load_variant, update_config
 
 from rlpyt.experiments.configs.atari.dqn.atari_dqn import configs
 

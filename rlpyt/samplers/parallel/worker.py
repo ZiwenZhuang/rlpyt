@@ -4,7 +4,7 @@ import time
 import torch
 
 from rlpyt.utils.collections import AttrDict
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.utils.seed import set_seed
 
 

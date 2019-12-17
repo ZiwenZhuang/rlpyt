@@ -5,7 +5,7 @@ from collections import namedtuple
 from rlpyt.algos.dqn.dqn import DQN, SamplesToBuffer
 from rlpyt.agents.base import AgentInputs
 from rlpyt.utils.quick_args import save__init__args
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.utils.collections import namedarraytuple
 from rlpyt.replays.sequence.frame import (UniformSequenceReplayFrameBuffer,
     PrioritizedSequenceReplayFrameBuffer, AsyncUniformSequenceReplayFrameBuffer,

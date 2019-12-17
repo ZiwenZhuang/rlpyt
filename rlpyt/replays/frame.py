@@ -2,7 +2,7 @@
 
 from rlpyt.utils.buffer import buffer_from_example, get_leading_dims
 from rlpyt.utils.collections import namedarraytuple
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 
 BufferSamples = None
 

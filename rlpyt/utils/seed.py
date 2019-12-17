@@ -2,7 +2,7 @@
 import numpy as np
 import time
 
-from rlpyt.utils.logging.console import colorize
+from exptools.logging.console import colorize
 
 seed_ = None
 

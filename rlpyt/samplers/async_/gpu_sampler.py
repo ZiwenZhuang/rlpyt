@@ -12,7 +12,7 @@ from rlpyt.samplers.async_.collectors import DbGpuResetCollector
 from rlpyt.samplers.parallel.gpu.collectors import GpuEvalCollector
 from rlpyt.samplers.async_.action_server import AsyncActionServer
 from rlpyt.samplers.parallel.worker import sampling_process
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.utils.seed import make_seed
 from rlpyt.utils.collections import AttrDict
 

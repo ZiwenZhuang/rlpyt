@@ -4,13 +4,13 @@ DQN in asynchronous mode with GPU sampler.
 (Or could use alternating GPU sampler).
 """
 
-from rlpyt.utils.launching.affinity import make_affinity
+from exptools.launching.affinity import make_affinity
 from rlpyt.samplers.async_.gpu_sampler import AsyncGpuSampler
 from rlpyt.envs.atari.atari_env import AtariEnv
 from rlpyt.algos.dqn.dqn import DQN
 from rlpyt.agents.dqn.atari.atari_dqn_agent import AtariDqnAgent
 from rlpyt.runners.async_rl import AsyncRlEval
-from rlpyt.utils.logging.context import logger_context
+from exptools.logging.context import logger_context
 
 
 def build_and_train(game="pong", run_ID=0):

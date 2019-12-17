@@ -5,7 +5,7 @@ import os
 import os.path as osp
 import json
 
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 
 LOG_DIR = osp.abspath(osp.join(osp.dirname(__file__), '../../../data'))
 

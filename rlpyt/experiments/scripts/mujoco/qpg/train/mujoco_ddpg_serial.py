@@ -1,15 +1,15 @@
 
 import sys
 
-from rlpyt.utils.launching.affinity import affinity_from_code
+from exptools.launching.affinity import affinity_from_code
 from rlpyt.samplers.serial.sampler import SerialSampler
 from rlpyt.samplers.parallel.cpu.collectors import CpuResetCollector
 from rlpyt.envs.gym import make as gym_make
 from rlpyt.algos.qpg.ddpg import DDPG
 from rlpyt.agents.qpg.ddpg_agent import DdpgAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
-from rlpyt.utils.logging.context import logger_context
-from rlpyt.utils.launching.variant import load_variant, update_config
+from exptools.logging.context import logger_context
+from exptools.launching.variant import load_variant, update_config
 
 from rlpyt.experiments.configs.mujoco.qpg.mujoco_ddpg import configs
 
