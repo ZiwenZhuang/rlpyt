@@ -29,7 +29,7 @@ def build_and_train(slot_affinity_code, log_dir, run_ID):
 
     affinity = affinity_from_code(slot_affinity_code)
     variant = load_variant(log_dir)
-    global config
+    # global config
     config = update_config(config, variant)
 
     sampler = GpuSampler(

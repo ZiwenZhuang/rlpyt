@@ -25,8 +25,8 @@ from exptools.launching.variant import make_variants, VariantLevel
 
 # Either manually set the resources for the experiment:
 affinity_code = encode_affinity(
-    n_cpu_core=2,
-    n_gpu=0,
+    n_cpu_core=4,
+    n_gpu=2,
     # hyperthread_offset=8,  # if auto-detect doesn't work, number of CPU cores
     # n_socket=1,  # if auto-detect doesn't work, can force (or force to 1)
     cpu_per_run=1,
