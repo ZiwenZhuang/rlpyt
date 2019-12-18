@@ -52,7 +52,7 @@ def build_and_train(slot_affinity_code, log_dir, run_ID):
         affinity=affinity,
     )
     name = "a2c_" + config["env"]["game"]
-    log_dir = "example_6"
+    # log_dir = "example_6"
     with logger_context(log_dir, run_ID, name, config):
         runner.train()
 
