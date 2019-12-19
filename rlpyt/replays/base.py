@@ -1,6 +1,8 @@
 
 
 class BaseReplayBuffer:
+    ''' Should implement `append_saples(self, samples)` and `sample_batch(self, batch_B, batch_T)` method
+    '''
 
     async_ = False
 

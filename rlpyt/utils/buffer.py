@@ -37,6 +37,8 @@ def np_mp_array(shape, dtype):
 
 
 def torchify_buffer(buffer_):
+    ''' The array returned will share the same memory as buffer_
+    '''
     if buffer_ is None:
         return
     if isinstance(buffer_, np.ndarray):
@@ -50,6 +52,8 @@ def torchify_buffer(buffer_):
 
 
 def numpify_buffer(buffer_):
+    ''' The array returned will share the same memory as buffer_
+    '''
     if buffer_ is None:
         return
     if isinstance(buffer_, torch.Tensor):
@@ -63,6 +67,7 @@ def numpify_buffer(buffer_):
 
 
 def buffer_to(buffer_, device=None):
+    ''' Move buffer_ to given device '''
     if buffer_ is None:
         return
     if isinstance(buffer_, torch.Tensor):

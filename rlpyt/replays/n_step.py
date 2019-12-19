@@ -53,7 +53,7 @@ class BaseNStepReturnBuffer(BaseReplayBuffer):
             idxs = np.arange(t, t + T) % self.T
         else:
             idxs = slice(t, t + T)
-        self.samples[idxs] = samples
+        self.samples[idxs] = samples # This copies value instead of copying reference.
         self.compute_returns(T)
         if not self._buffer_full and t + T >= self.T:
             self._buffer_full = True  # Only changes on first around.

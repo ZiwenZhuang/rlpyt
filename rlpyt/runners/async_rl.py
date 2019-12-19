@@ -144,7 +144,9 @@ class AsyncRlBase(BaseRunner):
         logger.log(f"Running {n_itr} sampler iterations.")
         return n_itr
 
-    def build_ctrl(self, world_size):
+    def build_ctrl(self, world_size: int):
+        ''' Based on world_size, build a AttrDict with series of control flags
+        '''
         opt_throttle = (mp.Barrier(world_size) if world_size > 1 else
             None)
         return AttrDict(

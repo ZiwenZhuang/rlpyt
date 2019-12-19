@@ -64,7 +64,11 @@ class SAC(RlAlgorithm):
 
     def initialize(self, agent, n_itr, batch_spec, mid_batch_reset, examples,
             world_size=1, rank=0):
-        """Used in basic or synchronous multi-GPU runners, not async."""
+        """Used in basic or synchronous multi-GPU runners, not async.
+        Parameters
+        ----------
+            agent: SacAgent
+        """
         self.agent = agent
         self.n_itr = n_itr
         self.mid_batch_reset = mid_batch_reset
@@ -257,7 +261,9 @@ class SAC(RlAlgorithm):
         return prior_log_pi
 
     def append_opt_info_(self, opt_info, losses, grad_norms, values):
-        """In-place."""
+        """ append all the `losses` and `grad_norms` and `values` into each attribute 
+            of `opt_info`
+        """
         q1_loss, q2_loss, pi_loss, alpha_loss = losses
         q1_grad_norm, q2_grad_norm, pi_grad_norm = grad_norms
         q1, q2, pi_mean, pi_log_std = values
