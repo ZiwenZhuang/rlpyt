@@ -110,6 +110,7 @@ The class types perform the following roles:
   * **Algorithm** - Uses gathered samples to train the `agent` (e.g. defines a loss function and performs gradient descent).
     * **Optimizer** - Training update rule (e.g. Adam), attached to the `algorithm`.
     * **OptimizationInfo** - Diagnostics logged on a per-training batch basis.
+    * **ReplayBuffer** - Storing and re-sampling from samples collected by `Collector`.
 
 ### Historical, Scaling, Interfaces
 
