@@ -9,6 +9,9 @@ from rlpyt.utils.collections import namedarraytuple_like
 
 
 def buffer_from_example(example, leading_dims, share_memory=False):
+    ''' Based on given example, build a object in memory that serves as buffer,
+    and return the object with the same alignment as example.
+    '''
     if example is None:
         return
     try:
