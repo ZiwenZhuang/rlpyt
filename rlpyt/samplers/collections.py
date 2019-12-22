@@ -5,6 +5,7 @@ from rlpyt.utils.collections import namedarraytuple, AttrDict
 
 
 Samples = namedarraytuple("Samples", ["agent", "env"])
+# Task_Samples will be a dictionary with task as key and samples as value
 
 AgentSamples = namedarraytuple("AgentSamples",
     ["action", "prev_action", "agent_info"])

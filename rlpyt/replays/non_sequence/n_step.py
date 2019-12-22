@@ -31,6 +31,8 @@ class NStepReturnBuffer(BaseNStepReturnBuffer):
                 prev_reward=s.reward[target_T_idxs - 1, B_idxs],
             ),
         )
+        # target_... means what happend after self.n_step_return timestep
+        # It serve as target for predicting the n-step return.
         t_news = np.where(s.done[T_idxs - 1, B_idxs])[0]
         batch.agent_inputs.prev_action[t_news] = 0
         batch.agent_inputs.prev_reward[t_news] = 0

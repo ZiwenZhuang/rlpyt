@@ -118,6 +118,8 @@ class ParallelSamplerBase(BaseSampler):
     ######################################
 
     def _get_n_envs_list(self, affinity=None, n_worker=None, B=None):
+        ''' Compute how many envs (int) for each worker. Returning a list(int)
+        '''
         B = self.batch_spec.B if B is None else B
         n_worker = len(affinity["workers_cpus"]) if n_worker is None else n_worker
         if B < n_worker:

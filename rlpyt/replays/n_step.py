@@ -41,6 +41,8 @@ class BaseNStepReturnBuffer(BaseReplayBuffer):
         else:
             self.samples_return_ = self.samples.reward
             self.samples_done_n = self.samples.done
+        # NOTE: self.samples_done_n[i] means there is at least one done between
+        # index [i:i+self.n_step_return]
         self._buffer_full = False
         self.off_backward = n_step_return  # Current invalid samples.
         self.off_forward = 1  # i.e. current cursor, prev_action overwritten.
