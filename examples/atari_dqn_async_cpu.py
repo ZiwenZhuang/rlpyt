@@ -22,7 +22,7 @@ def build_and_train(game="pong", run_ID=0):
         sample_gpu_per_run=0,
         async_sample=True,
         # hyperthread_offset=24,  # If machine has 24 cores.
-        # n_socket=2,  # Presume CPU socket affinity to lower/upper half GPUs.
+        n_socket=1,  # Presume CPU socket affinity to lower/upper half GPUs.
         # gpu_per_run=2,  # How many GPUs to parallelize one run across.
         # cpu_per_run=1,
     )

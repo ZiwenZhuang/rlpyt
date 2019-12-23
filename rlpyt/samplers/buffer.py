@@ -46,7 +46,7 @@ def build_samples_buffer(agent, env, batch_spec, bootstrap_value=False,
     reward = all_reward[1:]
     prev_reward = all_reward[:-1]  # Writing to reward will populate prev_reward.
     done = buffer_from_example(examples["done"], (T, B), env_shared)
-    next_observation = buffer_from_example(examples["observation"], env_shared)
+    next_observation = buffer_from_example(examples["next_observation"], (T, B), env_shared)
     env_info = buffer_from_example(examples["env_info"], (T, B), env_shared)
     env_buffer = EnvSamples(
         observation=observation,
@@ -69,7 +69,7 @@ def get_example_outputs(agent, env, examples, subprocess=False):
         torch.set_num_threads(1)  # Some fix to prevent MKL hang.
     o = env.reset()
     a = env.action_space.sample()
-    o, r, d, env_info = env.step(a)
+    no, r, d, env_info = env.step(a)
     r = np.asarray(r, dtype="float32")  # Must match torch float dtype here.
     agent.reset()
     agent_inputs = torchify_buffer(AgentInputs(o, a, r))
@@ -79,6 +79,7 @@ def get_example_outputs(agent, env, examples, subprocess=False):
         agent_info = agent_info._replace(prev_rnn_state=agent_info.prev_rnn_state[0])
     examples["observation"] = o
     examples["reward"] = r
+    examples["next_observation"] = no
     examples["done"] = d
     examples["env_info"] = env_info
     examples["action"] = a  # OK to put torch tensor here, could numpify.
