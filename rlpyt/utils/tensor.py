@@ -31,6 +31,9 @@ def from_onehot(onehot, dim=-1, dtype=None):
 
 
 def valid_mean(tensor, valid=None, dim=None):
+    """Calculate mean of the tensor, or a weighted sum by valid if provided. \\
+    Normally, it is a batch-wise mean.
+    """
     dim = () if dim is None else dim
     if valid is None:
         return tensor.mean(dim=dim)

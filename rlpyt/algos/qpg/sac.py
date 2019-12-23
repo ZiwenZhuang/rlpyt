@@ -221,6 +221,7 @@ class SAC(RlAlgorithm):
         disc = self.discount ** self.n_step_return
         y = (self.reward_scale * samples.return_ +
             (1 - samples.done_n.float()) * disc * target_value)
+        # y: target for Q functions, target_value
 
         q1_loss = 0.5 * valid_mean((y - q1) ** 2, valid)
         q2_loss = 0.5 * valid_mean((y - q2) ** 2, valid)
