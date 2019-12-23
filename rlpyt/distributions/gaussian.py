@@ -215,3 +215,14 @@ class Gaussian(Distribution):
             #     std = std * torch.ones(self.dim).float()  # Make it size dim.
             assert std.numel() in (self.dim, 1)
         self.std = std
+
+def product_of_gaussian(mus, log_stds):
+    """ Compute the mu, log_std of product of gaussians, \\
+    with dimension (n, vector_dim)
+    """
+    sigmas_squared = torch.exp(log_stds * 2)
+    sigmas_squared = torch.clamp(sigmas_squared, min=1e-7)
+    sigma_squared = 1. / torch.sum(torch.reciprocal(sigmas_squared), dim=0)
+    mu = sigma_squared * torch.sum(mus / sigmas_squared, dim=0)
+    log_std = torch.log(sigma_squared) / 2
+    return mu, log_std

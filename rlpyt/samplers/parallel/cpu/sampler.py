@@ -2,7 +2,6 @@
 import multiprocessing as mp
 import time
 
-
 from rlpyt.samplers.parallel.base import ParallelSamplerBase
 from rlpyt.samplers.parallel.cpu.collectors import (CpuResetCollector, 
     CpuEvalCollector)
