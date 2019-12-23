@@ -66,3 +66,9 @@ class RlAlgorithm:
     @property
     def batch_size(self):
         return self._batch_size  # For logging at least.
+
+class MetaRlAlgorithm(RlAlgorithm):
+    def initialize(self, *args, tasks_example, **kwargs):
+        ''' The only interface difference is changing `examples` to `task_examples`
+        '''
+        raise NotImplementedError

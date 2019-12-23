@@ -33,3 +33,13 @@ class MlpModel(torch.nn.Module):
     @property
     def output_size(self):
         return self._output_size
+
+class FlattenMlpModel(MlpModel):
+    """
+    if there are multiple inputs, concatenate along dim 1
+    """
+
+    def forward(self, *inputs, **kwargs):
+        """Accepting batch-wise"""
+        flat_inputs = torch.cat(inputs, dim=1)
+        return super().forward(flat_inputs, **kwargs)
