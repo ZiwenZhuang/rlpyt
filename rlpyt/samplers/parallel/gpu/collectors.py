@@ -38,7 +38,7 @@ class GpuResetCollector(DecorrelatingStartCollector):
                     env_buf.env_info[t, b] = env_info
             agent_buf.action[t] = step.action  # OPTIONAL BY SERVER
             env_buf.reward[t] = step.reward
-            env_buf.next_observation[t] = observation
+            env_buf.next_observation[t] = step.observation
             env_buf.done[t] = step.done
             if step.agent_info:
                 agent_buf.agent_info[t] = step.agent_info  # OPTIONAL BY SERVER
