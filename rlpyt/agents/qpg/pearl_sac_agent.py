@@ -110,21 +110,30 @@ class PearlSacAgent(SacAgent):
             max_std=np.exp(MAX_LOG_STD),
         )
 
-    def q(self, observation, prev_action, prev_reward, action, latent_z):
+    def q(self, observation, prev_action, prev_reward, action, latent_z=None):
+        if latent_z is None:
+            latent_z = self.zs
+            # assuming latent_z is broadcastable for now
         model_inputs = buffer_to((observation, prev_action, prev_reward,
             action, latent_z), device=self.device)
         q1 = self.q1_model(*model_inputs)
         q2 = self.q2_model(*model_inputs)
         return q1.cpu(), q2.cpu()
 
-    def target_q(self, observation, prev_action, prev_reward, action, latent_z):
+    def target_q(self, observation, prev_action, prev_reward, action, latent_z=None):
+        if latent_z is None:
+            latent_z = self.zs
+            # assuming latent_z is broadcastable for now
         model_inputs = buffer_to((observation, prev_action, prev_reward,
             action, latent_z), device=self.device)
         target_q1 = self.target_q1_model(*model_inputs)
         target_q2 = self.target_q2_model(*model_inputs)
         return target_q1.cpu(), target_q2.cpu()
 
-    def pi(self, observation, prev_action, prev_reward, latent_z):
+    def pi(self, observation, prev_action, prev_reward, latent_z=None):
+        if latent_z is None:
+            latent_z = self.zs
+            # assuming latent_z is broadcastable for now
         model_inputs = buffer_to((observation, prev_action, prev_reward, latent_z),
             device=self.device)
         mean, log_std = self.model(*model_inputs)
@@ -138,6 +147,7 @@ class PearlSacAgent(SacAgent):
     @torch.no_grad()
     def step(self, observation, prev_action, prev_reward):
         latent_z = self.zs
+        # assuming latent_z is broadcastable for now
         model_inputs = buffer_to((observation, prev_action, prev_reward, latent_z),
             device=self.device)
         mean, log_std = self.model(*model_inputs)
@@ -153,7 +163,7 @@ class PearlSacAgent(SacAgent):
         """
         self.z_means = torch.zeros(batch_size, self.latent_size)
         self.z_logstds = torch.ones(batch_size, self.latent_size)
-        self.sample_z()
+        self.sample_zs()
 
     def infer_posterior(self, context):
         """ NOTE: You should be sure that the batch-size should equal to
@@ -166,7 +176,7 @@ class PearlSacAgent(SacAgent):
         if self.encoder_model_kwargs["use_information_bottleneck"]:
             self.z_means, self.z_logstds = self.z_means
 
-    def sample_z(self):
+    def sample_zs(self):
         if self.encoder_model_kwargs["use_information_bottleneck"]:
             posteriors = [
                 self.z_distribution.sample(DistInfoStd(mean=m, log_std=l)) \
@@ -175,6 +185,7 @@ class PearlSacAgent(SacAgent):
             self.zs = torch.stack(posteriors)
         else:
             self.zs = self.z_means
+        return self.zs
 
     def detach_z(self):
         self.z = self.z.detach()

@@ -10,7 +10,7 @@ from rlpyt.replays.non_sequence.uniform import (UniformReplayBuffer,
     AsyncUniformReplayBuffer)
 from rlpyt.replays.multitask import MultitaskReplayBuffer
 from rlpyt.algos.base import MetaRlAlgorithm
-from rlpyt.algos.qpg.sac import SAC
+from rlpyt.algos.qpg.sac import SAC, OptInfo
 
 class PEARL_SAC(MetaRlAlgorithm, SAC):
     ''' Based on the need of algorithm,
@@ -39,6 +39,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             f"updates per iteration.")
         self.min_itr_learn = self.min_steps_learn // sampler_bs
         agent.give_min_itr_learn(self.min_itr_learn)
+        self.tasks = tasks_examples.keys()
         self.initialize_replay_buffer(tasks_examples, batch_spec)
         self.optim_initialize(rank)
 
@@ -58,8 +59,37 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         )
         self.replay_buffer = MultitaskReplayBuffer(**replay_kwargs)
 
+    def samples_to_buffer(self, tasks_samples):
+        return dict([
+            (task, super().samples_to_buffer(samples)) for task, samples in tasks_samples.items()
+        ])
+
+    def loss(self, tasks_samples_from_replay):
+        """Samples have leading batch dimension [B,..] (but not time)."""
+        self.agent.reset()
+        
+        # build context from samples and let agent to infer
+        for task, samples_from_replay in tasks_samples_from_replay.items():
+            
+
     def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):
         assert sampler_itr is None, "Not implemented async version for PEARL SAC"
+        if tasks_samples is not None:
+            tasks_samples_to_buffer = self.samples_to_buffer(tasks_samples)
+            self.replay_buffer.append_samples(tasks_samples_to_buffer)
+        opt_info = OptInfo(*([] for _ in range(len(OptInfo._fields))))
+        if itr < self.min_itr_learn:
+            return opt_info
+        for _ in range(self.updates_per_optimize):
+            # NOTE: now is different from original sac
+            tasks_choices = np.random.randint(len(self.tasks))
+            tasks_batch = self.tasks[tasks_choices]
+            tasks_samples_from_replay = self.replay_buffer.sample_batch(
+                tasks= tasks_batch, batch_B= self.batch_size
+            )
+            # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
+
+
 
         
         
