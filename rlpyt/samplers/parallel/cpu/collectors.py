@@ -46,6 +46,7 @@ class CpuResetCollector(DecorrelatingStartCollector):
                     env_buf.env_info[t, b] = env_info
             agent_buf.action[t] = action
             env_buf.reward[t] = reward
+            env_buf.next_observation[t] = observation
             if agent_info:
                 agent_buf.agent_info[t] = agent_info
 
@@ -114,6 +115,7 @@ class CpuContextCollector(CpuResetCollector):
                     env_buf.env_info[t, b] = env_info
             agent_buf.action[t] = action
             env_buf.reward[t] = reward
+            env_buf.next_observation[t] = observation
             if agent_info:
                 agent_buf.agent_info[t] = agent_info
 
@@ -122,7 +124,7 @@ class CpuContextCollector(CpuResetCollector):
                     observation= env_buf.observation[:t],
                     action= agent_buf.action[:t],
                     reward= env_buf.reward[:t],
-                    next_observation= np.concatenate([env_buf.observation[1:t], observation[None, ...]], axis=0)
+                    next_observation= env_buf.next_observation[:t]
                 )
                 self.agent.infer_posterior(context)
 
@@ -188,6 +190,7 @@ class CpuWaitResetCollector(DecorrelatingStartCollector):
                     env_buf.env_info[t, b] = env_info
             agent_buf.action[t] = action
             env_buf.reward[t] = reward
+            env_buf.next_observation[t] = observation
             env_buf.done[t] = self.done
             if agent_info:
                 agent_buf.agent_info[t] = agent_info
