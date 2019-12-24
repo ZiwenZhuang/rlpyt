@@ -8,7 +8,7 @@ from rlpyt.utils.misc import extract_sequences
 from rlpyt.utils.collections import namedarraytuple
 
 SamplesFromReplay = namedarraytuple("SamplesFromReplay",
-    ["all_observation", "all_action", "all_reward", "return_", "done", "done_n",
+    ["all_observation", "all_action", "all_reward", "return_", "all_next_observation", "done", "done_n",
     "init_rnn_state"])
 
 SamplesToBuffer = None
@@ -74,6 +74,7 @@ class SequenceNStepReturnBuffer(BaseNStepReturnBuffer):
             all_reward=extract_sequences(s.reward, T_idxs - 1, B_idxs,
                 T + self.n_step_return),  # Only prev_reward (agent + target).
             return_=extract_sequences(self.samples_return_, T_idxs, B_idxs, T),
+            all_next_observation=extract_sequences(s.next_observation, T_idxs, B_idxs, T),
             done=extract_sequences(s.done, T_idxs, B_idxs, T),
             done_n=extract_sequences(self.samples_done_n, T_idxs, B_idxs, T),
             init_rnn_state=init_rnn_state,  # (Same state for agent and target.)
