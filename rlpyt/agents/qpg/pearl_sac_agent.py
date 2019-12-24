@@ -168,9 +168,9 @@ class PearlSacAgent(SacAgent):
 
     def infer_posterior(self, context: Context):
         """ NOTE: You should be sure that the batch-size should equal to
-            action batch-size \\
+            action batch-size, which also means the number of tasks. \\
             Calculate batch-wise latent z distribution and sample it. \\
-            Write to `self.z_means` and `self.z_vars` \\
+            Write to `self.z_means` and `self.z_vars` who has only leading dim (B,) instead of (T,B) \\
             And it will sample zs in batch and write to `self.zs`
         """
         context_inputs = buffer_to((context,), device= self.device)
@@ -180,6 +180,7 @@ class PearlSacAgent(SacAgent):
         self.sample_zs()
 
     def sample_zs(self):
+        # NOTE: this self.zs only has leading dimension (B,) instead of (T, B)
         if self.encoder_model_kwargs["use_information_bottleneck"]:
             posteriors = [
                 self.z_distribution.sample(DistInfoStd(mean=m, log_std=l)) \

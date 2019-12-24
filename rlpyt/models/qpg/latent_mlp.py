@@ -1,4 +1,7 @@
-""" implmenting with adding a latent variable as input (called z)"""
+""" implmenting with adding a latent variable as input (called z)
+    Different from mlp.py in the same level, latent_z is assumed with
+leading dim (B,) instead of (T,B)
+"""
 import numpy as np
 import torch
 
@@ -34,7 +37,7 @@ class ContextInferModel(torch.nn.Module):
         Defined input sequences according to context. \\
         Maybe see rlpyt.samplers.parallel.cpu.collectors.Context
         """
-        lead_dim, T, B, _ == infer_leading_dims(observation, self._obs_ndim)
+        lead_dim, T, B, _ = infer_leading_dims(observation, self._obs_ndim)
         context_input = torch.cat([
             observation.view(T * B, -1),
             action.view(T * B, -1),
@@ -78,10 +81,10 @@ class LatentMuMlpModel(torch.nn.Module):
 
     def forward(self, observation, prev_action, prev_reward, latent_z):
         lead_dim, T, B, _ = infer_leading_dims(observation, self._obs_ndim)
-        assert B == latent_z.shape[1], "Please check the batch_size of the latent space of the agent"
+        assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
         mu_intput = torch.cat([
             observation.view(T * B, -1),
-            latent_z.view(T * B, -1)
+            torch.stack(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         mu = self._output_max * torch.tanh(self.mlp(mu_input))
         mu = restore_leading_dims(mu, lead_dim, T, B)
@@ -109,10 +112,10 @@ class LatentPiMlpModel(torch.nn.Module):
     def forward(self, observation, prev_action, prev_reward, latent_z):
         lead_dim, T, B, _ = infer_leading_dims(observation,
             self._obs_ndim)
-        assert B == latent_z.shape[1], "Please check the batch_size of the latent space of the agent"
+        assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
         pi_input = torch.cat([
             observation.view(T * B, -1),
-            latent_z.view(T * B, -1)
+            torch.stack(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         output = self.mlp(pi_input)
         mu, log_std = output[:, :self._action_size], output[:, self._action_size:]
@@ -140,11 +143,11 @@ class LatentQofMuMlpModel(torch.nn.Module):
     def forward(self, observation, prev_action, prev_reward, action, latent_z):
         lead_dim, T, B, _ = infer_leading_dims(observation,
             self._obs_ndim)
-        assert B == latent_z.shape[1], "Please check the batch_size of the latent space of the agent"
+        assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
         q_input = torch.cat([
             observation.view(T * B, -1),
             action.view(T * B, -1),
-            latent_z.view(T * B, -1)
+            torch.stack(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         q = self.mlp(q_input).squeeze(-1)
         q = restore_leading_dims(q, lead_dim, T, B)
@@ -172,10 +175,10 @@ class LatentVMlpModel(torch.nn.Module):
     def forward(self, observation, prev_action, prev_reward, latent_z):
         lead_dim, T, B, _ = infer_leading_dims(observation,
             self._obs_ndim)
-        assert B == latent_z.shape[1], "Please check the batch_size of the latent space of the agent"
+        assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
         v_input = torch.cat([
             observation.view(T * B, -1),
-            latent_z.view(T * B, -1)
+            torch.stack(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         v = self.mlp(v_input).squeeze(-1)
         v = restore_leading_dims(v, lead_dim, T, B)
