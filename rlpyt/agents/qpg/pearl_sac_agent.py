@@ -13,6 +13,7 @@ from rlpyt.distributions.gaussian import Gaussian, DistInfoStd
 from rlpyt.utils.buffer import buffer_to
 from rlpyt.utils.logging import logger
 from rlpyt.models.utils import update_state_dict
+from rlpyt.samplers.collections import Context
 from rlpyt.utils.collections import namedarraytuple
 
 
@@ -165,16 +166,18 @@ class PearlSacAgent(SacAgent):
         self.z_logstds = torch.ones(batch_size, self.latent_size)
         self.sample_zs()
 
-    def infer_posterior(self, context):
+    def infer_posterior(self, context: Context):
         """ NOTE: You should be sure that the batch-size should equal to
-            action batch-size
+            action batch-size \\
             Calculate batch-wise latent z distribution and sample it. \\
-            Write to `self.z_means` and `self.z_vars`
+            Write to `self.z_means` and `self.z_vars` \\
+            And it will sample zs in batch and write to `self.zs`
         """
         context_inputs = buffer_to((context,), device= self.device)
         self.z_means = self.encoder_model(*context_inputs)
         if self.encoder_model_kwargs["use_information_bottleneck"]:
             self.z_means, self.z_logstds = self.z_means
+        self.sample_zs()
 
     def sample_zs(self):
         if self.encoder_model_kwargs["use_information_bottleneck"]:

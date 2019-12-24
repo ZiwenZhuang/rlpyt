@@ -158,8 +158,9 @@ class LatentVMlpModel(torch.nn.Module):
             observation_shape,
             hidden_sizes,
             action_size=None,  # Unused but accept kwarg.
-            latent_size,
+            latent_size=None,   # You have to provide it, put at last is preventing *args
             ):
+        assert latent_size is not None
         super().__init__()
         self._obs_ndim = len(observation_shape)
         self.mlp = MlpModel(

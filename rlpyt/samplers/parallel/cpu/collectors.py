@@ -3,6 +3,7 @@ import numpy as np
 import warnings
 
 from exptools.collections import namedarraytuple
+from rlpyt.collections import Context
 from rlpyt.samplers.collectors import (DecorrelatingStartCollector,
     BaseEvalCollector)
 from rlpyt.agents.base import AgentInputs
@@ -55,10 +56,6 @@ class CpuResetCollector(DecorrelatingStartCollector):
             agent_buf.bootstrap_value[:] = self.agent.value(obs_pyt, act_pyt, rew_pyt)
 
         return AgentInputs(observation, action, reward), traj_infos, completed_infos
-
-Context = namedarraytuple("Context", [
-    "observation", "action", "reward", "next_observation", "done",
-])
 
 class CpuContextCollector(CpuResetCollector):
 

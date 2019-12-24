@@ -8,6 +8,8 @@ from exptools.logging import logger
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.replays.non_sequence.uniform import (UniformReplayBuffer,
     AsyncUniformReplayBuffer)
+from rlpyt.utils.buffer import buffer_to
+from rlpyt.samplers.collections import Context
 from rlpyt.replays.multitask import MultitaskReplayBuffer
 from rlpyt.algos.base import MetaRlAlgorithm
 from rlpyt.algos.qpg.sac import SAC, OptInfo
@@ -68,9 +70,16 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         """Samples have leading batch dimension [B,..] (but not time)."""
         self.agent.reset()
         
-        # build context from samples and let agent to infer
+        # build context from samples in batch for the agent encoder
+        observations, actions, rewards, next_observations, dones = [],[],[],[],[]
         for task, samples_from_replay in tasks_samples_from_replay.items():
-            
+            agent_intputs, target_inputs, action, next_observation = buffer_to((
+                samples_from_replay.agent_inputs,
+                samples_from_replay.target_inputs,
+                samples_from_replay.action,
+                samples_from_replay.next_observation,
+            ))
+            observation.append(agent_intputs.)
 
     def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):
         assert sampler_itr is None, "Not implemented async version for PEARL SAC"
@@ -88,11 +97,4 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 tasks= tasks_batch, batch_B= self.batch_size
             )
             # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
-
-
-
-        
-        
-        
-
-        
+            
