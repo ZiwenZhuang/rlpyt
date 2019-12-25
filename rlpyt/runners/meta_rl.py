@@ -8,7 +8,7 @@ from rlpyt.runners.minibatch_rl import MinibatchRlBase
 from exptools.logging import logger
 from exptools.launching.affinity import encode_affinity
 
-class MetaRlBase(BaseRunner, MinibatchRlBase):
+class MetaRlBase(MinibatchRlBase, BaseRunner):
     ''' Runner controlling meta RL algorithm.
         In terms of meta-training, the tasks are pre-defined as a list.
         Environment should provide `reset_task(self, task)` method, that set the env to given task
@@ -61,8 +61,14 @@ class MetaRlBase(BaseRunner, MinibatchRlBase):
         # start the main experiment loop
         for itr in range(n_itr):
             with logger.prefix(f"itr #{itr} "):
-                
-
-
-
-    
+                self.agent.sample_mode(itr)
+                samples, traj_infos = self.sampler.obtain_samples(itr)
+                self.agent.train_mode(itr)
+                opt_info = self.algo.optimize_agent(itr, samples)
+                self.store_diagnostics(itr, traj_infos, opt_info)
+                if (itr + 1) % self.log_interval_itrs == 0:
+                    # need to implement context eval collector for sampler.
+                    raise NotImplementedError
+                    # eval_traj_infos, eval_time = self.evaluate_agent(itr)
+                    # self.log_diagnostics(itr, eval_traj_infos, eval_time)
+        self.shutdown()

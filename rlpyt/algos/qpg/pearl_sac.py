@@ -139,6 +139,59 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             (task, super().samples_to_buffer(samples)) for task, samples in tasks_samples.items()
         ])
 
+    def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):
+        assert sampler_itr is None, "Not implemented async version for PEARL SAC"
+        if tasks_samples is not None:
+            tasks_samples_to_buffer = self.samples_to_buffer(tasks_samples)
+            self.replay_buffer.append_samples(tasks_samples_to_buffer)
+        opt_info = OptInfo(*([] for _ in range(len(OptInfo._fields))))
+        if itr < self.min_itr_learn:
+            return opt_info
+        for _ in range(self.updates_per_optimize):
+            # NOTE: now is different from original sac
+            tasks_choices = np.random.randint(len(self.tasks))
+            tasks_batch = self.tasks[tasks_choices]
+            tasks_samples_from_replay = self.replay_buffer.sample_batch(
+                tasks= tasks_batch, batch_B= self.batch_size
+            )
+            # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
+            losses, values = self.loss(tasks_samples_from_replay)
+            q1_loss, q2_loss, pi_loss, alpha_loss = losses
+
+            if alpha_loss is not None:
+                self.alpha_optimizer.zero_grad()
+                alpha_loss.backward()
+                self.alpha_optimizer.step()
+                self._alpha = torch.exp(self._log_alpha.detach())
+
+            self.pi_optimizer.zero_grad()
+            pi_loss.backward()
+            pi_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.pi_parameters(),
+                self.clip_grad_norm)
+            self.pi_optimizer.step()
+
+            # Step Q's last because pi_loss.backward() uses them?
+            self.q1_optimizer.zero_grad()
+            q1_loss.backward()
+            q1_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q1_parameters(),
+                self.clip_grad_norm)
+            self.q1_optimizer.step()
+
+            self.q2_optimizer.zero_grad()
+            q2_loss.backward()
+            q2_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q2_parameters(),
+                self.clip_grad_norm)
+            self.q2_optimizer.step()
+
+            grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm)
+
+            self.append_opt_info_(opt_info, losses, grad_norms, values)
+            self.update_counter += 1
+            if self.update_counter % self.target_update_interval == 0:
+                self.agent.update_target(self.target_update_tau)
+
+        return opt_info
+
     def loss(self, tasks_samples_from_replay):
         """ SAC said: Samples have leading batch dimension [B,..] (but not time). \\
             But the source code seems not show this behavior
@@ -182,25 +235,25 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
 
         new_action, log_pi, (pi_mean, pi_log_std) = self.agent.pi(*agent_inputs, latent_z)
         if not self.reparameterize:
-            new_action = new_action.detach()  # No grad.
+            raise NotImplementedError
+            # new_action = new_action.detach()  # No grad.
         log_target1, log_target2 = self.agent.q(*agent_inputs, new_action, latent_z)
+        min_log_target = torch.min(log_target1, log_target2)
+        prior_log_pi = self.get_action_prior(new_action.cpu())
 
+        if self.reparameterize:
+            pi_losses = self._alpha * log_pi - min_log_target - prior_log_pi
+        else:
+            raise NotImplementedError
 
+        pi_loss = torch.mean(pi_losses)
 
-    def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):
-        assert sampler_itr is None, "Not implemented async version for PEARL SAC"
-        if tasks_samples is not None:
-            tasks_samples_to_buffer = self.samples_to_buffer(tasks_samples)
-            self.replay_buffer.append_samples(tasks_samples_to_buffer)
-        opt_info = OptInfo(*([] for _ in range(len(OptInfo._fields))))
-        if itr < self.min_itr_learn:
-            return opt_info
-        for _ in range(self.updates_per_optimize):
-            # NOTE: now is different from original sac
-            tasks_choices = np.random.randint(len(self.tasks))
-            tasks_batch = self.tasks[tasks_choices]
-            tasks_samples_from_replay = self.replay_buffer.sample_batch(
-                tasks= tasks_batch, batch_B= self.batch_size
-            )
-            # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
-            
+        if self.target_entropy is not None:
+            alpha_losses = - self._log_alpha * (log_pi.detach() + self.target_entropy)
+            alpha_loss = torch.mean(alpha_losses)
+        else:
+            alpha_loss = None
+
+        losses = (q1_loss, q2_loss, pi_loss, alpha_loss)
+        values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std))
+        return losses, values

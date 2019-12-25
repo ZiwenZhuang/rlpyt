@@ -64,3 +64,35 @@ class SerialEvalCollector(BaseEvalCollector):
             logger.log("Evaluation reached max num time steps "
                 f"({self.max_T}).")
         return completed_traj_infos
+
+class SerialContextEvalCollector(BaseEvalCollector):
+    """ Different from SerialEvalCollector
+    """
+    def __init__(self,
+            envs,
+            agent,
+            TrajInfoCls,
+            max_T,
+            infer_posterior_period,
+            max_trajectories=None,
+            ):
+        save__init__args(locals())
+
+    def collect_evaluation(self, itr):
+        traj_infos = [self.TrajInfoCls() for _ in range(len(self.envs))]
+        completed_traj_infos = list()
+        observations = list()
+        for env in self.envs:
+            observations.append(env.reset())
+        observation = buffer_from_example(observations[0], len(self.envs))
+        for b, o in enumerate(observations):
+            observation[b] = o
+        action = buffer_from_example(self.envs[0].action_space.null_value(),
+            len(self.envs))
+        reward = np.zeros(len(self.envs), dtype="float32")
+        obs_pyt, act_pyt, rew_pyt = torchify_buffer((observation, action, reward))
+        self.agent.reset()
+        self.agent.eval_mode(itr)
+        for t in range(self.max_T):
+            act_pyt, agent_info = self.agent.step(obs_pyt, act_pyt, rew_pyt)
+
