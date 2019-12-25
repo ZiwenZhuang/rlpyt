@@ -9,34 +9,30 @@ EnvSpaces = namedtuple("EnvSpaces", ["observation", "action"])
 
 
 class Env:
-    """
-    The learning task, e.g. an MDP containing a transition function T(state,
-    action)-->state'.  Has a defined observation space and action space.
-    """
 
     def step(self, action):
         """
-        Run on timestep of the environment's dynamics using the input action,
-        advancing the internal state; T(state,action)-->state'.
-
-        Args:
-            action: An element of this environment's action space.
-        
-        Returns:
-            observation: An element of this environment's observation space corresponding to the next state.
-            reward (float): A scalar reward resulting from the state transition.
-            done (bool): Indicates whether the episode has ended.
-            info (namedtuple): Additional custom information.
+        Run one timestep of the environment's dynamics. When end of episode
+        is reached, reset() should be called to reset the environment's internal state.
+        Input
+        -----
+        action : an action provided by the environment
+        Outputs
+        -------
+        (observation, reward, done, info)
+        observation : agent's observation of the current environment
+        reward [Float] : amount of reward due to the previous action
+        done : a boolean, indicating whether the episode has ended
+        info : a namedtuple containing other diagnostic information from the previous action
         """
-
         raise NotImplementedError
 
     def reset(self):
         """
-        Resets the state of the environment.
-
-        Returns:
-            observation: The initial observation of the new episode.
+        Resets the state of the environment, returning an initial observation.
+        Outputs
+        -------
+        observation : the initial observation of the space. (Initial reward is assumed to be 0.)
         """
         raise NotImplementedError
 
@@ -57,9 +53,10 @@ class Env:
 
     @property
     def horizon(self):
-        """Episode horizon of the environment, if it has one."""
+        """Horizon of the environment, if it has one."""
         raise NotImplementedError
 
     def close(self):
-        """Any clean up operation."""
+        """Clean up operation."""
         pass
+
