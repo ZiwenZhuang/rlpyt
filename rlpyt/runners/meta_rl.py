@@ -3,12 +3,12 @@ import torch
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.utils.seed import set_seed, make_seed
 from rlpyt.runners.base import BaseRunner
-from rlpyt.runners.minibatch_rl import MinibatchRlBase
+from rlpyt.runners.minibatch_rl import MinibatchRlBase, MinibatchRlEval
 
 from exptools.logging import logger
 from exptools.launching.affinity import encode_affinity
 
-class MetaRlBase(MinibatchRlBase, BaseRunner):
+class MetaRlBase(MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandparent
     ''' Runner controlling meta RL algorithm.
         In terms of meta-training, the tasks are pre-defined as a list.
         Environment should provide `reset_task(self, task)` method, that set the env to given task
@@ -62,13 +62,21 @@ class MetaRlBase(MinibatchRlBase, BaseRunner):
         for itr in range(n_itr):
             with logger.prefix(f"itr #{itr} "):
                 self.agent.sample_mode(itr)
-                samples, traj_infos = self.sampler.obtain_samples(itr)
+                tasks_samples, tasks_traj_infos = self.sampler.obtain_samples(itr)
                 self.agent.train_mode(itr)
-                opt_info = self.algo.optimize_agent(itr, samples)
-                self.store_diagnostics(itr, traj_infos, opt_info)
+                opt_info = self.algo.optimize_agent(itr, tasks_samples)
+                self.store_diagnostics(itr, tasks_traj_infos, opt_info)
                 if (itr + 1) % self.log_interval_itrs == 0:
-                    # need to implement context eval collector for sampler.
-                    raise NotImplementedError
-                    # eval_traj_infos, eval_time = self.evaluate_agent(itr)
-                    # self.log_diagnostics(itr, eval_traj_infos, eval_time)
+                    tasks_eval_traj_infos, eval_time = self.evaluate_agent(itr)
+                    self.log_diagnostics(itr, tasks_eval_traj_infos, eval_time)
         self.shutdown()
+
+    def store_diagnostics(itr, tasks_traj_infos, opt_info):
+
+
+    def log_diagnostics(self, itr, tasks_eval_traj_infos, eval_time):
+        if not tasks_eval_traj_infos:
+            logger.log("WARNING: had no complete trajectories in eval.")
+        
+        
+        super(MinibatchRlBase, self).log_diagnostics()

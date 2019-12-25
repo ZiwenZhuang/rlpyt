@@ -173,6 +173,7 @@ class PearlSacAgent(SacAgent):
             Write to `self.z_means` and `self.z_vars` who has only leading dim (B,) instead of (T,B) \\
             And it will sample zs in batch and write to `self.zs`
         """
+        # assuming arrays in context has leading dimension (T, B)
         context_inputs = buffer_to((context,), device= self.device)
         self.z_means = self.encoder_model(*context_inputs)
         if self.encoder_model_kwargs["use_information_bottleneck"]:

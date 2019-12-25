@@ -62,19 +62,19 @@ class CpuContextCollector(CpuResetCollector):
     mid_batch_reset = True
     initialized = False
 
-    def __init__(self, infer_posterior_period, **kwargs):
+    def __init__(self, infer_context_period, **kwargs):
         """ Different from CpuResetCollector, this collector will ask the agent to
         * `reset()` at the start of collecting trajectory,
-        * `infer_posterior(context)` after `infer_porterior_period` timesteps, \
+        * `infer_posterior(context)` after `infer_context_period` timesteps, \
         where context has (T, B) leading dimension.
-        So, be sure to make `infer_posterior_period` smaller than batch_spec.T
+        So, be sure to make `infer_context_period` smaller than batch_spec.T
         """
         if CpuContextCollector.initialized:
             warnings.warn("""\
                 You are initializing another CpuContextCollector, be sure all \
                 collectors are not using the same agent.
                 """)
-        self.infer_porterior_period = infer_posterior_period
+        self.infer_context_period = infer_context_period
         CpuContextCollector.initialized = True
         super(CpuContextCollector, self).__init__(**kwargs)
 
@@ -116,7 +116,7 @@ class CpuContextCollector(CpuResetCollector):
             if agent_info:
                 agent_buf.agent_info[t] = agent_info
 
-            if t % self.infer_porterior_period == 0:
+            if t > 0 and t % self.infer_context_period == 0:
                 context = Context(
                     observation= env_buf.observation[:t],
                     action= agent_buf.action[:t],
