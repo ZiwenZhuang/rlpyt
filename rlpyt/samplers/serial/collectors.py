@@ -115,7 +115,7 @@ class SerialContextEvalCollector(BaseEvalCollector):
 
     def collect_evaluation(self, itr):
         traj_infos = [self.TrajInfoCls() for _ in range(len(self.envs))]
-        completed_traj_infos = list()
+        completed_traj_infos = list() # a list of TrajInfoCls instance
         observations = list()
         for env in self.envs:
             observations.append(env.reset())

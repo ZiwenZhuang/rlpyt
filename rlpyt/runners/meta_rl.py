@@ -71,12 +71,14 @@ class MetaRlBase(MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandpar
                     self.log_diagnostics(itr, tasks_eval_traj_infos, eval_time)
         self.shutdown()
 
-    def store_diagnostics(itr, tasks_traj_infos, opt_info):
-
+    def store_diagnostics(self, itr, tasks_traj_infos, opt_info):
+        # Each value in tasks_traj_infos should be a list of TrajInfoCls instance.
+        # I just add them together
+        traj_infos = [i for i in j for j in tasks_traj_infos.values()]
+        super().store_diagnostics(itr, traj_infos, opt_info)
 
     def log_diagnostics(self, itr, tasks_eval_traj_infos, eval_time):
-        if not tasks_eval_traj_infos:
-            logger.log("WARNING: had no complete trajectories in eval.")
-        
-        
-        super(MinibatchRlBase, self).log_diagnostics()
+        # Each value in tasks_traj_infos should be a list of TrajInfoCls instance.
+        # I just add them together
+        traj_infos = [i for i in j for j in tasks_eval_traj_infos.values()]
+        super().log_diagnostics(itr, traj_infos, eval_time)
