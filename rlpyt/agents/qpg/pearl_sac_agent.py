@@ -31,7 +31,7 @@ class PearlSacAgent(SacAgent):
             EncoderCls=ContextInferModel,
             ModelCls=LatentPiMlpModel,  # Pi model.
             QModelCls=LatentQofMuMlpModel,
-            latent_size=1024,
+            latent_size=32,
             encoder_model_kwargs=None, # see __init__() for example
             model_kwargs=None,  # Pi model.
             q_model_kwargs=None, # see __init__() for example
@@ -206,6 +206,9 @@ class PearlSacAgent(SacAgent):
     def eval_mode(self, itr):
         super().eval_mode(itr)
         self.encoder_model.eval()
+
+    def encoder_model_parameters(self):
+        return self.encoder_model.parameters()
 
     def state_dict(self):
         return dict(

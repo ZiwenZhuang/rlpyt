@@ -118,6 +118,11 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         self.initialize_replay_buffer(tasks_examples, batch_spec)
         self.optim_initialize(rank)
 
+    def optim_initialize(self, rank= 0):
+        super(PEARL_SAC, self).optim_initialize(rank)
+        self.context_optimizer = self.OptimCls(self.agent.encoder_model_parameters(),
+            lr= self.learning_rate, **self.optim_kwargs)
+
     def initialize_replay_buffer(self, tasks_example, batch_spec, async_=False):
         ''' Build a replay_buffer and assign it to `self.replay_buffer
         '''
@@ -158,6 +163,9 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             losses, values = self.loss(tasks_samples_from_replay)
             q1_loss, q2_loss, pi_loss, alpha_loss = losses
 
+            # ### Context model optimization is above all procedures
+            self.context_optimizer.zero_grad()
+
             if alpha_loss is not None:
                 self.alpha_optimizer.zero_grad()
                 alpha_loss.backward()
@@ -182,6 +190,8 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             q2_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q2_parameters(),
                 self.clip_grad_norm)
             self.q2_optimizer.step()
+
+            self.context_optimizer.step()
 
             grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm)
 

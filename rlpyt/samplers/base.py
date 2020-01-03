@@ -63,7 +63,7 @@ be provided by sampler, This sampler is completely re-written.
             batch_B, # parameter for training collector for each task
             CollectorCls= CpuContextCollector,
             TrajInfoCls=TrajInfo,
-            infer_context_period=np.inf,
+            infer_context_period=100,
             tasks_env_kwargs: dict,
             eval_n_envs_per_task: int=0, # How many envs will be evaluated in batch for each task.
             eval_CollectorCls=None, # Must supply if doing eval.
