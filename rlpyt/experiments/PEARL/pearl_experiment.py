@@ -54,4 +54,4 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
         runner.train()
 
 if __name__ == "__main__":
-    build_and_train(sys.argv[1:])
+    build_and_train(*sys.argv[1:])
