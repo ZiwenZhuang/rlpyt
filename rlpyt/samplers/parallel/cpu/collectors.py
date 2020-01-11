@@ -3,7 +3,7 @@ import numpy as np
 import warnings
 
 from exptools.collections import namedarraytuple
-from rlpyt.collections import Context
+from rlpyt.samplers.collections import Context
 from rlpyt.samplers.collectors import (DecorrelatingStartCollector,
     BaseEvalCollector)
 from rlpyt.agents.base import AgentInputs

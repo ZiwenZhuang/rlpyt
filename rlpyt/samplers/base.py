@@ -64,7 +64,7 @@ be provided by sampler, This sampler is completely re-written.
             CollectorCls= CpuContextCollector,
             TrajInfoCls=TrajInfo,
             infer_context_period=100,
-            tasks_env_kwargs: dict,
+            tasks_env_kwargs: dict=None,
             eval_n_envs_per_task: int=0, # How many envs will be evaluated in batch for each task.
             eval_CollectorCls=None, # Must supply if doing eval.
             eval_tasks_env_kwargs: dict=None, # a dictionary of dictionarys.
@@ -75,6 +75,7 @@ be provided by sampler, This sampler is completely re-written.
             param tasks_env_kwargs: a dictionary with (task, env_kwargs) pairs
             param eval_tasks_env_kwargs: a dictionary with (task, env_kwargs) pairs
         '''
+        assert tasks_env_kwargs is not None, "You have to provide env_kwargs for each task"
         eval_max_steps = None if eval_max_steps is None else int(eval_max_steps)
         eval_max_trajectories = (None if eval_max_trajectories is None else
             int(eval_max_trajectories))
