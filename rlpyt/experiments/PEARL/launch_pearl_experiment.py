@@ -43,13 +43,13 @@ def main(args):
     log_dirs = ["pearl_walker2d_rand_params"]
 
     run_experiments(
-        script="examples/example_6a.py",
+        script="rlpyt/experiments/PEARL/pearl_experiment.py",
         affinity_code=affinity_code,
         experiment_title=experiment_title,
         runs_per_setting=1,
         variants=variants,
         log_dirs=log_dirs,
-        debug_mode= 1 if args.debug or 0,
+        debug_mode=args.debug,
     )
 
 if __name__ == "__main__":
@@ -58,12 +58,11 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--debug', help= 'A common setting of whether to entering debug mode for remote attach',
-        action='store_true',
-        default= False,
+        type= int, default= 0,
     )
 
     args = parser.parse_args()
-    if args.debug:
+    if args.debug > 0:
         # configuration for remote attach and debug
         import ptvsd
         import sys
@@ -71,9 +70,10 @@ if __name__ == "__main__":
         print("Process: " + " ".join(sys.argv[:]))
         print("Is waiting for attach at address: %s:%d" % ip_address, flush= True)
         # Allow other computers to attach to ptvsd at this IP address and port.
-        ptvsd.enable_attach(address=ip_address, redirect_output=True)
+        ptvsd.enable_attach(address=ip_address)
         # Pause the program until a remote debugger is attached
         ptvsd.wait_for_attach()
         print("Process attached, start running into experiment...", flush= True)
+        ptvsd.break_into_debugger()
 
     main(args)
