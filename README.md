@@ -4,7 +4,11 @@
 
 ## Pearl:
 
-* Additional dependencies: [rand_param_envs](https://github.com/dennisl88/rand_param_envs)
+* Additional dependencies: [rand_param_envs](https://github.com/ZiwenZhuang/rand_param_envs)
+
+* Code are put as submodule, and you should run `pip install -e .` under that directory.
+
+* There will be some pre-requisities should be installed by `apt`, I haven't count them yet.
 
 ## Deep Reinforcement Learning in PyTorch
 

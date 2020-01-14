@@ -11,11 +11,18 @@ class MultitaskEnv(Env):
         """
         pass
 
+    # Maybe only one of the method is implemented in the class
     @staticmethod
-    def smaple_tasks(n_tasks):
+    def static_smaple_tasks(n_tasks):
         """ Return a list of tasks that is valid in this environment. \\
             We don't specify that `task` should be in here, as long as each
             task can be accepted by the `__init__` function of its own.
+        """
+        raise NotImplementedError
+    def sample_tasks(self, n_tasks):
+        """ To meet some of the sampling tasks method of those multitask \\
+            environment,
+            This should be called when there is an instance of the MultitaskEnv.
         """
         raise NotImplementedError
 

@@ -2,14 +2,16 @@ name: rlpyt
 channels:
 - pytorch
 dependencies:
-- python=3.7
+- python=3.6
 - pytorch=1.2
 - cudatoolkit=9.
 - numpy
 - psutil
 - opencv  # atari.
+- patchelf # mujoco
 - pip
 - pip:
   - atari-py
   - pyprind  # progbar.
   - gym
+  - ptvsd # vscode debug

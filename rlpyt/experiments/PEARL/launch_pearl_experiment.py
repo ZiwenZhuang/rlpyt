@@ -36,7 +36,12 @@ def get_default_config():
 
 def main(args):
     experiment_title = "pearl_reproduction"
-    affinity_code = encode_affinity()
+    affinity_code = encode_affinity(
+        n_cpu_core= 32,
+        n_gpu= 8,
+        gpu_per_run= 2,
+        contexts_per_gpu= 1,
+    )
     default_config = get_default_config()
 
     variants = [default_config]
@@ -70,7 +75,7 @@ if __name__ == "__main__":
         print("Process: " + " ".join(sys.argv[:]))
         print("Is waiting for attach at address: %s:%d" % ip_address, flush= True)
         # Allow other computers to attach to ptvsd at this IP address and port.
-        ptvsd.enable_attach(address=ip_address)
+        ptvsd.enable_attach(address=ip_address, redirect_output= True)
         # Pause the program until a remote debugger is attached
         ptvsd.wait_for_attach()
         print("Process attached, start running into experiment...", flush= True)

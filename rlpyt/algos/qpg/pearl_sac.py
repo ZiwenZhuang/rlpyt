@@ -26,7 +26,7 @@ def merge_same_task_batch(T, B, *tensors):
     for tensor in tensors:
         assert tensor.shape[0] == T and tensor.shape[1] == B
         result.append(tensor.view(T * B, -1))
-    return (*result)
+    return tuple(*result)
 
 def merge_different_tasks_batch(*tasks_tensors):
     """  Merge and transpose the tensors so that it can be infered directly by context
@@ -38,7 +38,7 @@ def merge_different_tasks_batch(*tasks_tensors):
     for tasks_tensor in tasks_tensors:
         tasks_tensor = torch.stack(tasks_tensor, dim=0).transpose(0,1)
         result.append(tasks_tensor.contigous())
-    return (*result)
+    return tuple(*result)
 
 def embed_tasks_into_batch(tasks_samples_from_replay):
     """ squeeze (Task, T, B) leading dimension into (T*B, Task), where Task dimension is

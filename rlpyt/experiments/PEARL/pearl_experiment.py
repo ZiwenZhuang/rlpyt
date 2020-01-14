@@ -21,7 +21,7 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
 
     # make a environment and extract tasks, sample at once prevents tasks duplicate
     # NOTE: this instance will no be used in training/testing
-    env_ = Walker2DRandParamsEnv()
+    env_ = RandParamEnv(EnvCls= Walker2DRandParamsEnv)
     tasks = env_.sample_tasks(config["tasks"]["n_train_tasks"] + config["tasks"]["n_eval_tasks"])
     train_tasks = tasks[:config["tasks"]["n_train_tasks"]]
     eval_tasks = tasks[config["tasks"]["n_train_tasks"]]
