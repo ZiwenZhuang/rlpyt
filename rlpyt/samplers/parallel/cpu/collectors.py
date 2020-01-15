@@ -121,8 +121,10 @@ class CpuContextCollector(CpuResetCollector):
                     observation= env_buf.observation[:t],
                     action= agent_buf.action[:t],
                     reward= env_buf.reward[:t],
+                    done= env_buf.done[:t].astype("float32"),
                     next_observation= env_buf.next_observation[:t]
                 )
+                context = torchify_buffer(context)
                 self.agent.infer_posterior(context)
 
         if "bootstrap_value" in agent_buf:

@@ -150,7 +150,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
 
     def samples_to_buffer(self, tasks_samples):
         return [
-            super().samples_to_buffer(samples) for samples in tasks_samples
+            super(PEARL_SAC, self).samples_to_buffer(samples) for samples in tasks_samples
         ]
 
     def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):

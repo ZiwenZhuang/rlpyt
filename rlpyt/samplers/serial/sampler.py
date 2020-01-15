@@ -169,7 +169,7 @@ class SerialMultitaskSampler(MultitaskBaseSampler):
         '''
         tasks_agent_inputs, tasks_traj_infos, tasks_completed_infos = [], [], []
         tasks = self.tasks
-        for idx, _ in tasks:
+        for idx, _ in enumerate(tasks):
             agent_inputs, traj_infos, completed_infos = \
                 self.tasks_collectors[idx].collect_batch(
                     self.tasks_agent_inputs[idx], self.tasks_traj_infos[idx], itr

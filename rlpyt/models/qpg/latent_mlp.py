@@ -15,7 +15,7 @@ class ContextInferModel(torch.nn.Module):
             self, 
             observation_shape,
             hidden_sizes,
-            action_size,
+            action_size, # a input size, does not require to store as attribute
             output_size, # latent variable
             use_information_bottleneck= False
             ):
@@ -48,8 +48,8 @@ class ContextInferModel(torch.nn.Module):
         params = self.mlp(context_input)
         params = restore_leading_dims(params, lead_dim, T, B)
         if self._use_information_bottleneck:
-            mus = params[..., :self.action_size]
-            logstds = params[..., self.action_size:]
+            mus = params[..., :self.output_size]
+            logstds = params[..., self.output_size:]
             z_params = [
                 product_of_gaussian(m, l) for m, l in \
                     zip(torch.unbind(mus, dim=1), torch.unbind(logstds, dim=1))
@@ -57,6 +57,7 @@ class ContextInferModel(torch.nn.Module):
             ]
             z_means = torch.stack([p[0] for p in z_params])
             z_logstds = torch.stack([p[1] for p in z_params])
+            return z_means, z_logstds
         else:
             return torch.mean(params, dim=0) # along time dimension
 

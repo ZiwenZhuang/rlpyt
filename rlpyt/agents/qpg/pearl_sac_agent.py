@@ -107,6 +107,10 @@ class PearlSacAgent(SacAgent):
             min_std=np.exp(MIN_LOG_STD),
             max_std=np.exp(MAX_LOG_STD),
         )
+    
+    def to_device(self, cuda_idx=None):
+        super(PearlSacAgent, self).to_device(cuda_idx= cuda_idx)
+        self.encoder_model.to(self.device)
 
     def q(self, observation, prev_action, prev_reward, action, latent_z=None):
         if latent_z is None:
@@ -171,7 +175,7 @@ class PearlSacAgent(SacAgent):
             And it will sample zs in batch and write to `self.zs`
         """
         # assuming arrays in context has leading dimension (T, B)
-        context_inputs = buffer_to((context,), device= self.device)
+        context_inputs = buffer_to(context, device= self.device)
         self.z_means = self.encoder_model(*context_inputs)
         if self.encoder_model_kwargs["use_information_bottleneck"]:
             self.z_means, self.z_logstds = self.z_means
