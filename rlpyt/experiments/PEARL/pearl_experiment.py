@@ -17,25 +17,24 @@ from rand_param_envs.walker2d_rand_params import Walker2DRandParamsEnv
 def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
     # I prefer put all tunable default configs into launch file
     affinity = affinity_from_code(affinity_code)
+    if isinstance(affinity, list):
+        affinity = affinity[0]
     config = load_variant(log_dir)
 
     # make a environment and extract tasks, sample at once prevents tasks duplicate
     # NOTE: this instance will no be used in training/testing
     env_ = RandParamEnv(EnvCls= Walker2DRandParamsEnv)
     tasks = env_.sample_tasks(config["tasks"]["n_train_tasks"] + config["tasks"]["n_eval_tasks"])
-    train_tasks = tasks[:config["tasks"]["n_train_tasks"]]
-    eval_tasks = tasks[config["tasks"]["n_train_tasks"]]
-    train_env_kwargs = dict([
-        (task, dict(task= task)) for task in train_tasks
-    ])
-    eval_env_kwargs = dict([
-        (task, dict(task= task)) for task in eval_tasks
-    ])
+    train_tasks = tuple(tasks[:config["tasks"]["n_train_tasks"]])
+    eval_tasks = tuple(tasks[config["tasks"]["n_train_tasks"]:])
+    common_env_kwargs = dict(EnvCls= Walker2DRandParamsEnv)
 
     sampler = SerialMultitaskSampler(
         EnvCls= RandParamEnv,
-        tasks_env_kwargs= train_env_kwargs,
-        eval_tasks_env_kwargs= eval_env_kwargs,
+        tasks= train_tasks,
+        env_kwargs= common_env_kwargs,
+        eval_tasks= eval_tasks,
+        eval_env_kwargs= common_env_kwargs,
         **config["sampler"]
     )
     algo = PEARL_SAC(**config["algo"])

@@ -61,31 +61,33 @@ be provided by sampler, This sampler is completely re-written.
             EnvCls,
             batch_T, # parameter for training collector for each task
             batch_B, # parameter for training collector for each task
+            tasks: tuple,
+            env_kwargs: dict= None, # Common kwargs that are put into both train_envs or eval_envs
             CollectorCls= CpuContextCollector,
+            max_decorrelation_steps= 100,
             TrajInfoCls=TrajInfo,
             infer_context_period=100,
-            tasks_env_kwargs: dict=None,
+            eval_tasks: tuple= None,
+            eval_env_kwargs= None,
             eval_n_envs_per_task: int=0, # How many envs will be evaluated in batch for each task.
             eval_CollectorCls=None, # Must supply if doing eval.
-            eval_tasks_env_kwargs: dict=None, # a dictionary of dictionarys.
             eval_max_steps=None,  # int if using evaluation.
             eval_max_trajectories=None,  # Optional earlier cutoff.
             ):
         '''
-            param tasks_env_kwargs: a dictionary with (task, env_kwargs) pairs
-            param eval_tasks_env_kwargs: a dictionary with (task, env_kwargs) pairs
+            param tasks: a tuple of task instances that will be fed as `task` argument when constructing
+                envs, and this tuple should not be modified after it is created.
+            param eval_tasks: a tuple of task instances that will be fed as `task` argument when constructing
+                envs, and this tuple should not be modified after it is created.
         '''
-        assert tasks_env_kwargs is not None, "You have to provide env_kwargs for each task"
         eval_max_steps = None if eval_max_steps is None else int(eval_max_steps)
         eval_max_trajectories = (None if eval_max_trajectories is None else
             int(eval_max_trajectories))
         save__init__args(locals())
         self.mid_batch_reset = CollectorCls.mid_batch_reset
         self.batch_spec = BatchSpec(batch_T, batch_B)
-        self.tasks = list(tasks_env_kwargs.keys())
-        self.tasks_collectors = dict()
-        self.eval_tasks = list(eval_tasks_env_kwargs.keys())
-        self.eval_tasks_collectors = dict()
+        self.tasks_collectors = []
+        self.eval_tasks_collectors = []
 
     @property
     def batch_size(self):

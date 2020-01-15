@@ -5,10 +5,10 @@ from rand_param_envs.base import MetaEnv # NOTE: the import here is to tell you 
 # is trying to do to wrap rand-param-envs into use.
 from rlpyt.spaces.float_box import FloatBox
 from rlpyt.envs.meta_env.base import MultitaskEnv
-from rlpyt.envs.gym import info_to_nt
+from rlpyt.envs.gym import build_info_tuples, info_to_nt
 from rlpyt.envs.base import EnvStep, EnvSpaces
 
-import json
+import numpy as np
 
 class RandParamEnv(MultitaskEnv):
     """ A interface wrapping for the rand_param_envs. \\
@@ -31,6 +31,10 @@ class RandParamEnv(MultitaskEnv):
         self._observation_space = FloatBox(low= self._wrapped_env.observation_space.low, high= self._wrapped_env.observation_space.high)
         self._action_space = FloatBox(low= self._wrapped_env.action_space.low, high= self._wrapped_env.action_space.high)
 
+        # mimicing the usage of GymEnvWrapper
+        _, _, _, info = self._wrapped_env.step(self._observation_space.null_value())
+        build_info_tuples(info)
+
     def sample_tasks(self, n_tasks):
         return self._wrapped_env.sample_tasks(n_tasks)
     def get_task(self):
@@ -46,7 +50,9 @@ class RandParamEnv(MultitaskEnv):
 
     def step(self, action):
         o, r, d, info = self._wrapped_env.step(action)
+        o = o.astype(np.float32)
+        info = info_to_nt(info)
         return EnvStep(o, r, d, info)
     
     def reset(self):
-        return self._wrapped_env.reset()
+        return self._wrapped_env.reset().astype(np.float32)

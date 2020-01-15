@@ -115,7 +115,7 @@ class LatentPiMlpModel(torch.nn.Module):
         assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
         pi_input = torch.cat([
             observation.view(T * B, -1),
-            torch.stack(T * [latent_z.view(B, -1)], dim=0)
+            torch.cat(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         output = self.mlp(pi_input)
         mu, log_std = output[:, :self._action_size], output[:, self._action_size:]

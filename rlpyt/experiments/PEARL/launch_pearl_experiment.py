@@ -12,10 +12,11 @@ def get_default_config():
             n_eval_tasks= 10,
         ),
         sampler= dict(
-            eval_n_envs_per_task= 1,
             batch_T= 200,
             batch_B= 1,
             infer_context_period= 100,
+            eval_max_steps=int(51e3),
+            eval_n_envs_per_task= 1,
         ),
         algo= dict(
             discount= 0.99,
@@ -26,8 +27,11 @@ def get_default_config():
             optim_kwargs= dict(),
         ),
         agent= dict(
-            latent_dim= 5,
-            encoder_model_kwargs= dict(hidden_sizes= [300, 300, 300]),
+            latent_size= 5,
+            encoder_model_kwargs= dict(
+                hidden_sizes= [300, 300, 300],
+                use_information_bottleneck= True,
+            ),
             model_kwargs= dict(hidden_sizes= [300, 300, 300]),
             q_model_kwargs= dict(hidden_sizes= [300, 300, 300]),
             v_model_kwargs= dict(hidden_sizes= [300, 300, 300]),

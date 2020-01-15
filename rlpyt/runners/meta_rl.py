@@ -22,7 +22,10 @@ class MetaRlBase(MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandpar
         '''
         # start system configurations (not experiment configuration)
         logger.log(f"Get affinity code: {encode_affinity(self.affinity)}")
-        set_seed(self.seed if not self.seed is None else make_seed())
+        if self.seed is None:
+            self.seed = make_seed()
+        set_seed(self.seed)
+        self.rank = rank = getattr(self, "rank", 0)
         self.world_size = world_size = getattr(self, "world_size", 1)
 
         # initialize all experiment components

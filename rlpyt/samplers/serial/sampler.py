@@ -105,51 +105,55 @@ class SerialMultitaskSampler(MultitaskBaseSampler):
             param kwargs: all fed into each single sampler
         '''
         B = self.batch_spec.B
-        envs = [self.EnvCls(**self.env_kwargs) for _ in range(B)]
+        env = self.EnvCls(task= self.tasks[0], **self.env_kwargs)
         global_B = B * world_size
         env_ranks = list(range(rank * B, (rank + 1) * B))
-        tasks_agent_inputs, tasks_traj_infos = dict(), dict()
+        tasks_agent_inputs, tasks_traj_infos = [], []
 
-        agent.initialize(envs[0].spaces, share_memory=False,
+        agent.initialize(env.spaces, share_memory=False,
             global_B=global_B, env_ranks=env_ranks)
-        tasks_samples_pyt, tasks_samples_np, tasks_examples = dict(), dict(), dict()
+        tasks_samples_pyt, tasks_samples_np, tasks_examples = [], [], []
         if traj_info_kwargs:
             for k, v in traj_info_kwargs.items():
                 setattr(self.TrajInfoCls, "_" + k, v)  # Avoid passing at init.
         for task in self.tasks:
-            env_kwargs = self.tasks_env_kwargs[task]
-            envs = [self.EnvCls(**env_kwargs) for _ in range(self.batch_spec.B)]
-            tasks_samples_pyt[task], tasks_samples_np[task], tasks_examples[task] = \
+            envs = [self.EnvCls(task= task, **self.env_kwargs) for _ in range(self.batch_spec.B)]
+            samples_pyt, samples_np, examples = \
                 build_samples_buffer(agent, envs[0],
                 self.batch_spec, bootstrap_value, agent_shared=False,
                 env_shared=False, subprocess=False)
-            self.tasks_collectors[task] = self.CollectorCls(
+            tasks_samples_pyt.append(samples_pyt)
+            tasks_samples_np.append(samples_np)
+            tasks_examples.append(examples)
+            self.tasks_collectors.append(self.CollectorCls(
                 rank=0,
                 envs=envs,
-                samples_np=tasks_samples_np[task],
+                samples_np=samples_np,
                 batch_T=self.batch_spec.T,
                 TrajInfoCls=self.TrajInfoCls,
                 infer_context_period= self.infer_context_period,
                 agent=agent,
                 global_B=global_B,
                 env_ranks=env_ranks,  # Might get applied redundantly to agent.
-            )
-            tasks_agent_inputs[task], tasks_traj_infos[task] = \
-                self.tasks_collectors[task].start_envs(self.max_decorrelation_steps)
-            self.tasks_collectors[task].start_agent()
+            ))
+            agent_inputs, traj_infos = \
+                self.tasks_collectors[-1].start_envs(self.max_decorrelation_steps)
+            tasks_agent_inputs.append(agent_inputs)
+            tasks_traj_infos.append(traj_infos)
+            self.tasks_collectors[-1].start_agent()
 
         # We build eval envs for eval tasks
-        if self.eval_n_envs_per_task > 0 and len(self.eval_tasks_env_kwargs) > 0:
-            for task, eval_task_env_kwargs in self.eval_tasks_env_kwargs.items():
-                eval_envs = [self.EnvCls(**eval_task_env_kwargs) for _ in range(self.eval_n_envs_per_task)]
-                self.eval_tasks_collectors[task] = self.eval_CollectorCls(
+        if self.eval_n_envs_per_task > 0 and len(self.eval_tasks) > 0:
+            for task in self.eval_tasks:
+                eval_envs = [self.EnvCls(task= task, **self.eval_env_kwargs) for _ in range(self.eval_n_envs_per_task)]
+                self.eval_tasks_collectors.append(self.eval_CollectorCls(
                     envs=eval_envs,
                     agent=agent,
                     TrajInfoCls=self.TrajInfoCls,
                     infer_context_period= self.infer_context_period,
-                    max_T=self.eval_max_steps // self.eval_n_envs,
+                    max_T=self.eval_max_steps // self.eval_n_envs_per_task,
                     max_trajectories=self.eval_max_trajectories,
-                )
+                ))
 
         self.agent = agent,
         self.tasks_samples_pyt = tasks_samples_pyt
@@ -159,25 +163,27 @@ class SerialMultitaskSampler(MultitaskBaseSampler):
         logger.log("Serial Sampler initialized.")
         return tasks_examples
 
-    def obtain_samples(self, itr, tasks= None):
+    def obtain_samples(self, itr):
         '''
             param task: If provided, it will sample from given tasks
         '''
-        tasks_agent_inputs, tasks_traj_infos, tasks_completed_infos = dict(), dict(), dict()
-        if tasks is None: tasks = self.tasks
-        for task in tasks:
-            tasks_agent_inputs[task], tasks_traj_infos[task], tasks_completed_infos[task] = \
-                self.tasks_collectors[task].collect_batch(
-                    self.tasks_agent_inputs[task], self.tasks_traj_infos[task], itr
+        tasks_agent_inputs, tasks_traj_infos, tasks_completed_infos = [], [], []
+        tasks = self.tasks
+        for idx, _ in tasks:
+            agent_inputs, traj_infos, completed_infos = \
+                self.tasks_collectors[idx].collect_batch(
+                    self.tasks_agent_inputs[idx], self.tasks_traj_infos[idx], itr
                 )
-            self.tasks_collectors[task].reset_if_needed(tasks_agent_inputs[task])
+            tasks_agent_inputs.append(agent_inputs)
+            tasks_traj_infos.append(traj_infos)
+            tasks_completed_infos.append(completed_infos)
+            self.tasks_collectors[idx].reset_if_needed(tasks_agent_inputs[idx])
         self.tasks_agent_inputs = tasks_agent_inputs
         self.tasks_traj_infos = tasks_traj_infos
         return self.tasks_samples_pyt, tasks_completed_infos
 
-    def evaluate_agent(self, itr, tasks= None):
-        if tasks is None: tasks = self.eval_tasks_env_kwargs.keys()
-        return dict([
-            (task, self.eval_tasks_collectors[task].collect_evaluation(itr))
-            for task in tasks
-        ])
+    def evaluate_agent(self, itr):
+        return [
+            eval_collectors.collect_evaluation(itr)
+            for eval_collectors in self.eval_tasks_collectors
+        ]

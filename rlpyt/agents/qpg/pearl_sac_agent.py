@@ -44,11 +44,13 @@ class PearlSacAgent(SacAgent):
         because of the encoder and need to concatenate encoder output and observation
         """
         if encoder_model_kwargs is None:
+            # This surve as an example of making encoder_model_kwargs
             encoder_model_kwargs = dict(
                 hidden_sizes=[200, 200, 200],
                 use_information_bottleneck= True,
             )
         encoder_model_kwargs["output_size"] = latent_size
+        save__init__args(locals())
         super().__init__(
             ModelCls=ModelCls, 
             QModelCls=QModelCls,
@@ -59,7 +61,9 @@ class PearlSacAgent(SacAgent):
             action_squash=action_squash,
             pretrain_std=pretrain_std,
         )
-        save__init__args(locals())
+        self.model_kwargs.update(dict(latent_size= latent_size))
+        self.q_model_kwargs.update(dict(latent_size= latent_size))
+        self.v_model_kwargs.update(dict(latent_size= latent_size)) # NOTE: This is model is not used in PEARL implementation
 
     def initialize(self, env_spaces, share_memory=False,
             global_B=1, env_ranks=None):
@@ -70,11 +74,6 @@ class PearlSacAgent(SacAgent):
         # 
         self.encoder_model = self.EncoderCls(**self.env_model_kwargs,
             **self.encoder_model_kwargs)
-        # modify the parameters so that code can be directly reused
-        observation_shape = self.env_model_kwargs["observation_shape"]
-        self.env_model_kwargs["observation_shape"] = [
-            np.prod(observation_shape) + self.encoder_model.otuput_size
-        ]
         # build regular model as sac_agent or base agent do
         self.model = self.ModelCls(**self.env_model_kwargs, **self.model_kwargs)
         self.q1_model = self.QModelCls(**self.env_model_kwargs, **self.q_model_kwargs)
@@ -85,8 +84,6 @@ class PearlSacAgent(SacAgent):
             **self.q_model_kwargs)
         self.target_q1_model.load_state_dict(self.q1_model.state_dict())
         self.target_q2_model.load_state_dict(self.q2_model.state_dict())
-        # move back observation shape
-        self.env_model_kwargs["observation_shape"] = observation_shape
         # share memory if needed
         if share_memory:
             self.encoder_model.share_memory()

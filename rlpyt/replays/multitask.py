@@ -12,24 +12,24 @@ class MultitaskReplayBuffer(BaseReplayBuffer):
             **buffer_kwargs, # The argument feed directly to a single replay buffer
             ):
         save__init__args(locals())
-        buffer_kwargs.pop("example") # make sure they have no such a argument
-        self.replay_buffers = dict([
-            (task, SingleReplayBufferCls(example= tasks_example[task], **buffer_kwargs))
-            for task in tasks_example.keys()
-        ])
+        if "example" in buffer_kwargs.keys():
+            buffer_kwargs.pop("example") # make sure they have no such an argument
+        self.tasks_replay_buffers = [
+            SingleReplayBufferCls(example= example, **buffer_kwargs)
+            for example in tasks_example
+        ]
 
     def append_samples(self, tasks_samples):
         ''' Append sample in terms of a given task
+            Assuming there is no return value
         '''
-        return dict([
-            (task, self.replay_buffers[task].append_samples(samples))
-            for task, samples in tasks_samples.items()
-        ])
+        for idx, samples in enumerate(tasks_samples):
+            self.tasks_replay_buffers[idx].append_samples(samples)
 
-    def sample_batch(self, tasks, batch_B, batch_T= None):
+    def sample_batch(self, batch_B, batch_T= None):
         ''' Sample a batch of trajectories based on given task
         '''
-        return dict([
-            (task, self.replay_buffers[task].sample_batch(batch_B, batch_T))
-            for task in tasks
-        ])
+        return [
+            replay_buffer.sample_batch(batch_B, batch_T)
+            for replay_buffer in self.tasks_replay_buffers
+        ]

@@ -15,7 +15,7 @@ from rlpyt.utils.tensor import infer_leading_dims
 from rlpyt.samplers.collections import Context
 from rlpyt.replays.multitask import MultitaskReplayBuffer
 from rlpyt.algos.base import MetaRlAlgorithm
-from rlpyt.algos.qpg.sac import SAC, OptInfo
+from rlpyt.algos.qpg.sac import SAC, OptInfo, SamplesToBuffer
 
 def merge_same_task_batch(T, B, *tensors):
     """ Assuming each tensor is a torch.Tensor with leading dim (T, B) \\
@@ -53,7 +53,7 @@ namedarraytuple should be better.
     tasks_samples_from_replay_rests = ([],[],[],[],[],[])
     tasks_target_inputs = ([],[],[])
 
-    for task, samples_from_replay in tasks_samples_from_replay.items():
+    for samples_from_replay in tasks_samples_from_replay:
         _, T, B, _ = infer_leading_dims(samples_from_replay.reward, dim=1)
         agent_inputs = merge_same_task_batch(T, B, *samples_from_replay.agent_inputs)
         samples_from_replay_rests = merge_same_task_batch(T, B,
@@ -114,7 +114,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             f"updates per iteration.")
         self.min_itr_learn = self.min_steps_learn // sampler_bs
         agent.give_min_itr_learn(self.min_itr_learn)
-        self.tasks = tasks_examples.keys()
+        self.n_tasks = len(tasks_examples)
         self.initialize_replay_buffer(tasks_examples, batch_spec)
         self.optim_initialize(rank)
 
@@ -129,10 +129,19 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         if getattr(self, "bootstrap_time_limit", False):
             # I didn't figure out what this attribute is, so I didn't implement it.
             raise NotImplementedError
-        SingleReplayCls = AsyncUniformReplayBuffer if async_ else UniformReplayBuffer
+        SingleReplayBufferCls = AsyncUniformReplayBuffer if async_ else UniformReplayBuffer
+        tasks_example_to_buffer = []
+        for example in tasks_example:
+            example_to_buffer = SamplesToBuffer(
+                observation=example["observation"],
+                action=example["action"],
+                reward=example["reward"],
+                done=example["done"],
+            )
+            tasks_example_to_buffer.append(example_to_buffer)
         replay_kwargs = dict(
-            SingleReplayCls= SingleReplayCls,
-            tasks_example= tasks_example,
+            SingleReplayBufferCls= SingleReplayBufferCls,
+            tasks_example= tasks_example_to_buffer,
             size=self.replay_size,
             B=batch_spec.B,
             n_step_return=self.n_step_return,
@@ -140,9 +149,9 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         self.replay_buffer = MultitaskReplayBuffer(**replay_kwargs)
 
     def samples_to_buffer(self, tasks_samples):
-        return dict([
-            (task, super().samples_to_buffer(samples)) for task, samples in tasks_samples.items()
-        ])
+        return [
+            super().samples_to_buffer(samples) for samples in tasks_samples
+        ]
 
     def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):
         assert sampler_itr is None, "Not implemented async version for PEARL SAC"
@@ -154,11 +163,12 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             return opt_info
         for _ in range(self.updates_per_optimize):
             # NOTE: now is different from original sac
-            tasks_choices = np.random.randint(len(self.tasks))
-            tasks_batch = self.tasks[tasks_choices]
+            tasks_choices = np.random.randint(self.n_tasks)
             tasks_samples_from_replay = self.replay_buffer.sample_batch(
-                tasks= tasks_batch, batch_B= self.batch_size
+                batch_B= self.batch_size
             )
+            # After this step, the list does not cooreponding to the tasks order
+            tasks_samples_from_replay = tasks_samples_from_replay[tasks_choices]
             # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
             losses, values = self.loss(tasks_samples_from_replay)
             q1_loss, q2_loss, pi_loss, alpha_loss = losses
