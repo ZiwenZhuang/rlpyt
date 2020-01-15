@@ -1,11 +1,14 @@
 """ https://github.com/dennisl88/rand_param_envs/tree/4d1529d61ca0d65ed4bd9207b108d4a4662a4da0
 """
 
-from rand_param_envs.base import MetaEnv # just import here force python to check when you are using this file.
-from rlpyt.spaces.gym_wrapper import GymSpaceWrapper
+from rand_param_envs.base import MetaEnv # NOTE: the import here is to tell you what this file
+# is trying to do to wrap rand-param-envs into use.
+from rlpyt.spaces.float_box import FloatBox
 from rlpyt.envs.meta_env.base import MultitaskEnv
 from rlpyt.envs.gym import info_to_nt
 from rlpyt.envs.base import EnvStep, EnvSpaces
+
+import json
 
 class RandParamEnv(MultitaskEnv):
     """ A interface wrapping for the rand_param_envs. \\
@@ -17,33 +20,33 @@ class RandParamEnv(MultitaskEnv):
 
         Args:
             EnvCls: the constructor to build one of the rand_param_envs
-            task: NOTE: the task parameter you sampled from a wrapped environment instance
+            task: In this case, all `task` send and revieced in this interface should be a string
             env_kwargs: the kwargs that feed into EnvCls for building the environment instance
         """
         self._wrapped_env = EnvCls(**env_kwargs)
-        self._wrapped_env.set_task(task)
+        if not task is None:
+            self._wrapped_env.set_task(task)
 
-        self.observation_space = GymSpaceWrapper(
-            space=self._wrapped_env.observation_space,
-            name="obs"
-        )
-        self.action_space = GymSpaceWrapper(
-            space=self._wrapped_env.action_space,
-            name="act"
-        )
+        # get them via @property method
+        self._observation_space = FloatBox(low= self._wrapped_env.observation_space.low, high= self._wrapped_env.observation_space.high)
+        self._action_space = FloatBox(low= self._wrapped_env.action_space.low, high= self._wrapped_env.action_space.high)
 
+    def sample_tasks(self, n_tasks):
+        return self._wrapped_env.sample_tasks(n_tasks)
     def get_task(self):
         return self._wrapped_env.get_task()
     def set_task(self, task):
+        """ task: a string sampled from this instance """
         # assuming no return value
         self._wrapped_env.set_task(task)
+
     def log_diagnostics(self, paths, prefix):
         # Did not checked yet, I haven't figure out what to do.
         raise NotImplementedError
 
     def step(self, action):
-        a = self.action_space.revert(action)
-        o, r, d, info = self._wrapped_env.step(a)
-        obs = self.observation_space.convert(o)
-        info = info_to_nt(info)
-        return EnvStep(obs, r, d, info)
+        o, r, d, info = self._wrapped_env.step(action)
+        return EnvStep(o, r, d, info)
+    
+    def reset(self):
+        return self._wrapped_env.reset()

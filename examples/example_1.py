@@ -69,6 +69,7 @@ if __name__ == "__main__":
         # Pause the program until a remote debugger is attached
         ptvsd.wait_for_attach()
         print("Process attached, start running into experiment...", flush= True)
+        ptvsd.break_into_debugger()
 
     build_and_train(
         game=args.game,
