@@ -85,4 +85,4 @@ class MetaRlBase(MinibatchRl, MinibatchRlEval, BaseRunner): # MinibatchRlBase is
         # Each value in tasks_traj_infos should be a list of TrajInfoCls instance.
         # I just add them together
         traj_infos = [i for j in tasks_eval_traj_infos for i in j]
-        super(MetaRlBase, self).log_diagnostics(itr)
+        MinibatchRlEval.log_diagnostics(self, itr, traj_infos, eval_time)
