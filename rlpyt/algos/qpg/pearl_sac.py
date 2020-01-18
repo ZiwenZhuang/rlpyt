@@ -248,7 +248,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         ))
         latent_z = self.agent.zs
         # as designed, latent_z is stored in self.agent, we don't need to put it on the table for now.
-        q1, q2 = self.agent.q(*agent_inputs, action, latent_z)
+        q1, q2 = self.agent.q(*agent_inputs, action, latent_z.detach())
         with torch.no_grad():
             target_action, target_log_pi, _ = self.agent.pi(*target_inputs, latent_z)
             target_q1, target_q2 = self.agent.target_q(*target_inputs, target_action, latent_z)
@@ -262,7 +262,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         q1_loss = 0.5 * torch.mean((y - q1) ** 2)
         q2_loss = 0.5 * torch.mean((y - q2) ** 2)
 
-        new_action, log_pi, (pi_mean, pi_log_std) = self.agent.pi(*agent_inputs, latent_z)
+        new_action, log_pi, (pi_mean, pi_log_std) = self.agent.pi(*agent_inputs, latent_z.detach())
         if not self.reparameterize:
             raise NotImplementedError
             # new_action = new_action.detach()  # No grad.
