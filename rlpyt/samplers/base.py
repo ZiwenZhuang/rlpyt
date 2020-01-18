@@ -55,7 +55,8 @@ class MultitaskBaseSampler(BaseSampler):
 be provided by sampler, This sampler is completely re-written.
     * What is different from original sampler:
         All data (samples_pyt, samples_np, samples..) are added "tasks_" as prefix.
-        All returned value from common interface are a dictionary with a common returned value.
+        All returned value from common interface are a list with a common returned value \
+            whose order will be in your tasks order.
     '''
     def __init__(self,
             EnvCls,

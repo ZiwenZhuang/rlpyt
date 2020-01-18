@@ -78,6 +78,7 @@ class SerialContextEvalCollector(BaseEvalCollector):
             max_trajectories=None,
             ):
         save__init__args(locals())
+        self.build_context_buffer()
 
     def build_context_buffer(self):
         """ Build a Context whose leading dimension will be (infer_context_period, batch_B)
@@ -88,23 +89,23 @@ class SerialContextEvalCollector(BaseEvalCollector):
         observations_buffer = np.zeros((
             self.infer_context_period, len(self.envs),
             *observation_shape
-        ))
+        )).astype("float32")
         actions_buffer = np.zeros((
             self.infer_context_period, len(self.envs),
             *action_shape
-        ))
+        )).astype("float32")
         rewards_buffer = np.zeros((
             self.infer_context_period, len(self.envs),
             1
-        ))
+        )).astype("float32")
         next_observations_buffer = np.zeros((
             self.infer_context_period, len(self.envs),
             *observation_shape
-        ))
+        )).astype("float32")
         dones_buffer = np.zeros((
             self.infer_context_period, len(self.envs),
             1
-        ))
+        )).astype("float32")
         self.context_buffer = Context(
             observation= observations_buffer,
             action= actions_buffer,
@@ -126,7 +127,7 @@ class SerialContextEvalCollector(BaseEvalCollector):
             len(self.envs))
         reward = np.zeros(len(self.envs), dtype="float32")
         obs_pyt, act_pyt, rew_pyt = torchify_buffer((observation, action, reward))
-        self.agent.reset()
+        self.agent.reset(batch_size=len(self.envs))
         self.agent.eval_mode(itr)
         for t in range(self.max_T):
             self.context_buffer.observation[t % self.infer_context_period] = observation
@@ -151,7 +152,8 @@ class SerialContextEvalCollector(BaseEvalCollector):
             self.context_buffer.reward[t % self.infer_context_period] = reward
             self.context_buffer.next_observation[t % self.infer_context_period] = observation
             if t > 0 and t % self.infer_context_period == 0:
-                self.agent.infer_posterior(self.context_buffer)
+                context = torchify_buffer(self.context_buffer)
+                self.agent.infer_posterior(context)
             if (self.max_trajectories is not None and
                     len(completed_traj_infos) >= self.max_trajectories):
                 logger.log("Evaluation reached max num trajectories "

@@ -214,10 +214,10 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
 
                 grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm)
 
-            self.append_opt_info_(opt_info, losses, grad_norms, values)
-            self.update_counter += 1
-            if self.update_counter % self.target_update_interval == 0:
-                self.agent.update_target(self.target_update_tau)
+                self.append_opt_info_(opt_info, losses, grad_norms, values)
+                self.update_counter += 1
+                if self.update_counter % self.target_update_interval == 0:
+                    self.agent.update_target(self.target_update_tau)
 
         return opt_info
 

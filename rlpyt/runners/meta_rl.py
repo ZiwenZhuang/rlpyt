@@ -3,12 +3,12 @@ import torch
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.utils.seed import set_seed, make_seed
 from rlpyt.runners.base import BaseRunner
-from rlpyt.runners.minibatch_rl import MinibatchRlBase, MinibatchRlEval
+from rlpyt.runners.minibatch_rl import MinibatchRlBase, MinibatchRl, MinibatchRlEval
 
 from exptools.logging import logger
 from exptools.launching.affinity import encode_affinity
 
-class MetaRlBase(MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandparent
+class MetaRlBase(MinibatchRl, MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandparent
     ''' Runner controlling meta RL algorithm.
         In terms of meta-training, the tasks are pre-defined as a list.
         Environment should provide `reset_task(self, task)` method, that set the env to given task
@@ -69,7 +69,8 @@ class MetaRlBase(MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandpar
                 self.agent.train_mode(itr)
                 opt_info = self.algo.optimize_agent(itr, tasks_samples)
                 self.store_diagnostics(itr, tasks_traj_infos, opt_info)
-                if (itr + 1) % self.log_interval_itrs == 0:
+                if itr % self.log_interval_itrs == 0:
+                    # NOTE: This has to be done at itr==0, because self.pbar needs initialization from here
                     tasks_eval_traj_infos, eval_time = self.evaluate_agent(itr)
                     self.log_diagnostics(itr, tasks_eval_traj_infos, eval_time)
         self.shutdown()
@@ -77,11 +78,11 @@ class MetaRlBase(MinibatchRlEval, BaseRunner): # MinibatchRlBase is its grandpar
     def store_diagnostics(self, itr, tasks_traj_infos, opt_info):
         # Each value in tasks_traj_infos should be a list of TrajInfoCls instance.
         # I just add them together
-        traj_infos = [i for i in j for j in tasks_traj_infos.values()]
-        super().store_diagnostics(itr, traj_infos, opt_info)
+        traj_infos = [i for j in tasks_traj_infos for i in j]
+        super(MetaRlBase, self).store_diagnostics(itr, traj_infos, opt_info)
 
     def log_diagnostics(self, itr, tasks_eval_traj_infos, eval_time):
         # Each value in tasks_traj_infos should be a list of TrajInfoCls instance.
         # I just add them together
-        traj_infos = [i for i in j for j in tasks_eval_traj_infos.values()]
-        super().log_diagnostics(itr, traj_infos, eval_time)
+        traj_infos = [i for j in tasks_eval_traj_infos for i in j]
+        super(MetaRlBase, self).log_diagnostics(itr)

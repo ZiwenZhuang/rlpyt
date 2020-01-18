@@ -15,7 +15,7 @@ def get_default_config():
             batch_T= 200,
             batch_B= 1,
             infer_context_period= 100,
-            eval_max_steps=int(51e3),
+            eval_max_steps=int(1e3),
             eval_n_envs_per_task= 1,
         ),
         algo= dict(
