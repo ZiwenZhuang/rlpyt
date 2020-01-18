@@ -25,6 +25,7 @@ def get_default_config():
             learning_rate= 3e-4,
             n_step_return= 1,
             optim_kwargs= dict(),
+            bootstrap_timelimit= False, # currently, I didn't figure out what it means.
         ),
         agent= dict(
             latent_size= 5,
@@ -50,6 +51,12 @@ def main(args):
 
     variants = [default_config]
     log_dirs = ["pearl_walker2d_rand_params"]
+
+    # setup for some debug option
+    if args.debug:
+        for variant in variants:
+            variant["algo"]["min_steps_learn"]=0
+            variant["algo"]["replay_ratio"]=1
 
     run_experiments(
         script="rlpyt/experiments/PEARL/pearl_experiment.py",

@@ -17,16 +17,16 @@ from rlpyt.replays.multitask import MultitaskReplayBuffer
 from rlpyt.algos.base import MetaRlAlgorithm
 from rlpyt.algos.qpg.sac import SAC, OptInfo, SamplesToBuffer
 
-def merge_same_task_batch(T, B, *tensors):
+def merge_TB_in_each_task_batch(T, B, *tensors):
     """ Assuming each tensor is a torch.Tensor with leading dim (T, B) \\
     According to the sampler with one task, the (T,B) dimension can be merged together
     as a batch of data for the same task.
     """
     result = []
     for tensor in tensors:
-        assert tensor.shape[0] == T and tensor.shape[1] == B
+        # assert tensor.shape[0] == T and tensor.shape[1] == B # No need to do this
         result.append(tensor.view(T * B, -1))
-    return tuple(*result)
+    return tuple(result)
 
 def merge_different_tasks_batch(*tasks_tensors):
     """  Merge and transpose the tensors so that it can be infered directly by context
@@ -36,9 +36,9 @@ def merge_different_tasks_batch(*tasks_tensors):
     """
     result = []
     for tasks_tensor in tasks_tensors:
-        tasks_tensor = torch.stack(tasks_tensor, dim=0).transpose(0,1)
-        result.append(tasks_tensor.contigous())
-    return tuple(*result)
+        tasks_a_tensor = torch.stack(tasks_tensor, dim=0).transpose(0,1)
+        result.append(tasks_a_tensor.contiguous())
+    return tuple(result)
 
 def embed_tasks_into_batch(tasks_samples_from_replay):
     """ squeeze (Task, T, B) leading dimension into (T*B, Task), where Task dimension is
@@ -54,9 +54,9 @@ namedarraytuple should be better.
     tasks_target_inputs = ([],[],[])
 
     for samples_from_replay in tasks_samples_from_replay:
-        _, T, B, _ = infer_leading_dims(samples_from_replay.reward, dim=1)
-        agent_inputs = merge_same_task_batch(T, B, *samples_from_replay.agent_inputs)
-        samples_from_replay_rests = merge_same_task_batch(T, B,
+        _, T, B, _ = infer_leading_dims(samples_from_replay.reward, dim=0)
+        agent_inputs = merge_TB_in_each_task_batch(T, B, *samples_from_replay.agent_inputs)
+        samples_from_replay_rests = merge_TB_in_each_task_batch(T, B,
             samples_from_replay.action,
             samples_from_replay.return_,
             samples_from_replay.reward,
@@ -64,7 +64,7 @@ namedarraytuple should be better.
             samples_from_replay.done,
             samples_from_replay.done_n,
         )
-        target_inputs = merge_same_task_batch(T, B, *samples_from_replay.target_inputs)
+        target_inputs = merge_TB_in_each_task_batch(T, B, *samples_from_replay.target_inputs)
         for tasks_agent_input, agent_input in zip(tasks_agent_inputs, agent_inputs):
             tasks_agent_input.append(agent_input)
         for tasks_samples_from_replay_rest, samples_from_replay_rest in zip(tasks_samples_from_replay_rests, samples_from_replay_rests):
@@ -75,14 +75,15 @@ namedarraytuple should be better.
     tasks_samples_from_replay_rests = merge_different_tasks_batch(*tasks_samples_from_replay_rests)
     tasks_target_inputs = merge_different_tasks_batch(*tasks_target_inputs)
     # now, each element in this three variable should be tensor with shape (T*B, Tasks, ...)
+    # NOTE: Due to data merging function, some of the scalar value need to be squeezed
     samples_tasks_from_replay = SamplesFromReplay(
         agent_inputs = AgentInputs(*tasks_agent_inputs),
         action = tasks_samples_from_replay_rests[0],
-        return_ = tasks_samples_from_replay_rests[1],
-        reward = tasks_samples_from_replay_rests[2],
+        return_ = tasks_samples_from_replay_rests[1].squeeze(2),
+        reward = tasks_samples_from_replay_rests[2].squeeze(2),
         next_observation = tasks_samples_from_replay_rests[3],
-        done = tasks_samples_from_replay_rests[4],
-        done_n = tasks_samples_from_replay_rests[5],
+        done = tasks_samples_from_replay_rests[4].squeeze(2),
+        done_n = tasks_samples_from_replay_rests[5].squeeze(2),
         target_inputs = AgentInputs(*tasks_target_inputs),
     )
     return samples_tasks_from_replay
@@ -94,6 +95,12 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 .qf1, .qf2, .vf several pytorch module
 
     '''
+    def __init__(self,
+            n_tasks_per_update= 5, # the number of tasks to sample in one optim.step() call
+            **kwargs,
+            ):
+        self.n_tasks_per_update = n_tasks_per_update
+        super(PEARL_SAC, self).__init__(**kwargs)
 
     def initialize(self, agent, n_itr, batch_spec, mid_batch_reset, tasks_examples,
             world_size=1, rank=0):
@@ -106,8 +113,8 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         self.n_itr = n_itr
         self.mid_batch_reset = mid_batch_reset
         self.sampler_bs = sampler_bs = batch_spec.size
-        self.updates_per_optimize = int(self.replay_ratio * sampler_bs /
-            self.batch_size)
+        self.updates_per_optimize = max(1, int(self.replay_ratio * sampler_bs /
+            self.batch_size))
         logger.log(f"From sampler batch size {sampler_bs}, training "
             f"batch size {self.batch_size}, and replay ratio "
             f"{self.replay_ratio}, computed {self.updates_per_optimize} "
@@ -126,7 +133,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
     def initialize_replay_buffer(self, tasks_example, batch_spec, async_=False):
         ''' Build a replay_buffer and assign it to `self.replay_buffer
         '''
-        if getattr(self, "bootstrap_time_limit", False):
+        if self.bootstrap_timelimit:
             # I didn't figure out what this attribute is, so I didn't implement it.
             raise NotImplementedError
         SingleReplayBufferCls = AsyncUniformReplayBuffer if async_ else UniformReplayBuffer
@@ -137,6 +144,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 action=example["action"],
                 reward=example["reward"],
                 done=example["done"],
+                next_observation=example["next_observation"]
             )
             tasks_example_to_buffer.append(example_to_buffer)
         replay_kwargs = dict(
@@ -163,47 +171,48 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             return opt_info
         for _ in range(self.updates_per_optimize):
             # NOTE: now is different from original sac
-            tasks_choices = np.random.randint(self.n_tasks)
             tasks_samples_from_replay = self.replay_buffer.sample_batch(
                 batch_B= self.batch_size
             )
-            # After this step, the list does not cooreponding to the tasks order
-            tasks_samples_from_replay = tasks_samples_from_replay[tasks_choices]
-            # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
-            losses, values = self.loss(tasks_samples_from_replay)
-            q1_loss, q2_loss, pi_loss, alpha_loss = losses
+            # To make the batch size smaller, pick a subset of tasks to train. All tasks will be trained
+            _num_upd8s = max(1, int(self.n_tasks / self.n_tasks_per_update))
+            for ite_i in range(_num_upd8s):
+                tasks_samples_from_replay_batch = tasks_samples_from_replay[(ite_i*self.n_tasks_per_update):((ite_i+1)*self.n_tasks_per_update)]
+                # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
+                losses, values = self.loss(tasks_samples_from_replay_batch)
+                q1_loss, q2_loss, pi_loss, alpha_loss = losses
 
-            # ### Context model optimization is above all procedures
-            self.context_optimizer.zero_grad()
+                # ### Context model optimization is above all procedures
+                self.context_optimizer.zero_grad()
 
-            if alpha_loss is not None:
-                self.alpha_optimizer.zero_grad()
-                alpha_loss.backward()
-                self.alpha_optimizer.step()
-                self._alpha = torch.exp(self._log_alpha.detach())
+                if alpha_loss is not None:
+                    self.alpha_optimizer.zero_grad()
+                    alpha_loss.backward()
+                    self.alpha_optimizer.step()
+                    self._alpha = torch.exp(self._log_alpha.detach())
 
-            self.pi_optimizer.zero_grad()
-            pi_loss.backward()
-            pi_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.pi_parameters(),
-                self.clip_grad_norm)
-            self.pi_optimizer.step()
+                self.pi_optimizer.zero_grad()
+                pi_loss.backward()
+                pi_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.pi_parameters(),
+                    self.clip_grad_norm)
+                self.pi_optimizer.step()
 
-            # Step Q's last because pi_loss.backward() uses them?
-            self.q1_optimizer.zero_grad()
-            q1_loss.backward()
-            q1_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q1_parameters(),
-                self.clip_grad_norm)
-            self.q1_optimizer.step()
+                # Step Q's last because pi_loss.backward() uses them?
+                self.q1_optimizer.zero_grad()
+                q1_loss.backward()
+                q1_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q1_parameters(),
+                    self.clip_grad_norm)
+                self.q1_optimizer.step()
 
-            self.q2_optimizer.zero_grad()
-            q2_loss.backward()
-            q2_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q2_parameters(),
-                self.clip_grad_norm)
-            self.q2_optimizer.step()
+                self.q2_optimizer.zero_grad()
+                q2_loss.backward()
+                q2_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.q2_parameters(),
+                    self.clip_grad_norm)
+                self.q2_optimizer.step()
 
-            self.context_optimizer.step()
+                self.context_optimizer.step()
 
-            grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm)
+                grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm)
 
             self.append_opt_info_(opt_info, losses, grad_norms, values)
             self.update_counter += 1
@@ -229,7 +238,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         ))
 
         # ################## start calculating and make computation graph ##############
-        self.agent.reset()
+        self.agent.reset(batch_size= samples_tasks_from_replay.reward.shape[1])
         self.agent.infer_posterior(Context(
             observation=agent_inputs.observation,
             action=action,

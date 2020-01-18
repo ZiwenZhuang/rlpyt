@@ -23,7 +23,7 @@ OptInfo = namedtuple("OptInfo",
     "q1GradNorm", "q2GradNorm", "piGradNorm",
     "q1", "q2", "piMu", "piLogStd", "qMeanDiff", "alpha"])
 SamplesToBuffer = namedarraytuple("SamplesToBuffer",
-    ["observation", "action", "reward", "done"])
+    ["observation", "action", "reward", "done", "next_observation"])
 SamplesToBufferTl = namedarraytuple("SamplesToBufferTl",
     SamplesToBuffer._fields + ("timeout",))
 
@@ -36,9 +36,9 @@ class SAC(RlAlgorithm):
             self,
             discount=0.99,
             batch_size=256,
-            min_steps_learn=int(1e4),
+            min_steps_learn=int(1e4), # the min timesteps to collect before actually start learning.
             replay_size=int(1e6),
-            replay_ratio=256,  # data_consumption / data_generation
+            replay_ratio=256,  # data_consumption (one timestep with one optim.step() called) / data_generation (batch.size)
             target_update_tau=0.005,  # tau=1 for hard update.
             target_update_interval=1,  # 1000 for hard update, 1 for soft.
             learning_rate=3e-4,
@@ -124,6 +124,7 @@ class SAC(RlAlgorithm):
             action=examples["action"],
             reward=examples["reward"],
             done=examples["done"],
+            next_observation=examples["next_observation"],
         )
         if not self.bootstrap_timelimit:
             ReplayCls = AsyncUniformReplayBuffer if async_ else UniformReplayBuffer
@@ -192,6 +193,7 @@ class SAC(RlAlgorithm):
             action=samples.agent.action,
             reward=samples.env.reward,
             done=samples.env.done,
+            next_observation=samples.env.next_observation,
         )
         if self.bootstrap_timelimit:
             samples_to_buffer = SamplesToBufferTl(*samples_to_buffer,

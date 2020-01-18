@@ -43,7 +43,7 @@ class ContextInferModel(torch.nn.Module):
             action.view(T * B, -1),
             reward.view(T * B, -1),
             next_observation.view(T * B, -1),
-            done.view(T * B, -1)
+            done.view(T * B, -1).float()
         ], dim=1)
         params = self.mlp(context_input)
         params = restore_leading_dims(params, lead_dim, T, B)
@@ -148,7 +148,7 @@ class LatentQofMuMlpModel(torch.nn.Module):
         q_input = torch.cat([
             observation.view(T * B, -1),
             action.view(T * B, -1),
-            torch.stack(T * [latent_z.view(B, -1)], dim=0)
+            torch.cat(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         q = self.mlp(q_input).squeeze(-1)
         q = restore_leading_dims(q, lead_dim, T, B)
@@ -179,7 +179,7 @@ class LatentVMlpModel(torch.nn.Module):
         assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
         v_input = torch.cat([
             observation.view(T * B, -1),
-            torch.stack(T * [latent_z.view(B, -1)], dim=0)
+            torch.cat(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
         v = self.mlp(v_input).squeeze(-1)
         v = restore_leading_dims(v, lead_dim, T, B)

@@ -30,6 +30,6 @@ class MultitaskReplayBuffer(BaseReplayBuffer):
         ''' Sample a batch of trajectories based on given task
         '''
         return [
-            replay_buffer.sample_batch(batch_B, batch_T)
+            replay_buffer.sample_batch(batch_B)
             for replay_buffer in self.tasks_replay_buffers
         ]

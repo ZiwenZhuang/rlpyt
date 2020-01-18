@@ -72,7 +72,8 @@ class CpuContextCollector(CpuResetCollector):
         if CpuContextCollector.initialized:
             warnings.warn("""\
                 You are initializing another CpuContextCollector, be sure all \
-                collectors are not using the same agent.
+                collectors are not using the same agent in parallel.
+                In Serial is OK.
                 """)
         self.infer_context_period = infer_context_period
         CpuContextCollector.initialized = True
@@ -88,7 +89,7 @@ class CpuContextCollector(CpuResetCollector):
         agent_buf.prev_action[0] = action  # Leading prev_action.
         env_buf.prev_reward[0] = reward
         self.agent.sample_mode(itr)
-        self.agent.reset()
+        self.agent.reset(batch_size= len(self.envs))
         for t in range(self.batch_T):
             env_buf.observation[t] = observation
             # Agent inputs and outputs are torch tensors.
@@ -121,7 +122,7 @@ class CpuContextCollector(CpuResetCollector):
                     observation= env_buf.observation[:t],
                     action= agent_buf.action[:t],
                     reward= env_buf.reward[:t],
-                    done= env_buf.done[:t].astype("float32"),
+                    done= env_buf.done[:t],
                     next_observation= env_buf.next_observation[:t]
                 )
                 context = torchify_buffer(context)
