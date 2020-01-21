@@ -12,6 +12,8 @@ from rlpyt.algos.qpg.pearl_sac import PEARL_SAC
 from rlpyt.agents.qpg.pearl_sac_agent import PearlSacAgent
 from rlpyt.runners.meta_rl import MetaRlBase
 
+from rand_param_envs.hopper_rand_params import HopperRandParamsEnv
+from rand_param_envs.pr2_env_reach import PR2Env
 from rand_param_envs.walker2d_rand_params import Walker2DRandParamsEnv
 
 def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
@@ -23,11 +25,17 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
 
     # make a environment and extract tasks, sample at once prevents tasks duplicate
     # NOTE: this instance will no be used in training/testing
-    env_ = RandParamEnv(EnvCls= Walker2DRandParamsEnv)
+    if config["env"]["name"] == "hopper":
+        EnvCls = HopperRandParamsEnv
+    elif config["env"]["name"] == "pr2":
+        EnvCls = PR2Env
+    elif config["env"]["name"] == "walker":
+        EnvCls = Walker2DRandParamsEnv
+    env_ = RandParamEnv(EnvCls= EnvCls)
     tasks = env_.sample_tasks(config["tasks"]["n_train_tasks"] + config["tasks"]["n_eval_tasks"])
     train_tasks = tuple(tasks[:config["tasks"]["n_train_tasks"]])
     eval_tasks = tuple(tasks[config["tasks"]["n_train_tasks"]:])
-    common_env_kwargs = dict(EnvCls= Walker2DRandParamsEnv)
+    common_env_kwargs = dict(EnvCls= EnvCls)
 
     sampler = SerialMultitaskSampler(
         EnvCls= RandParamEnv,
@@ -47,7 +55,7 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
         log_interval_steps= 1e5,
         affinity= affinity
     )
-    name = "pearl_walker2d_rand_params"
+    name = "pearl_"+config["env"]["name"]+"_rand_param"
 
     with logger_context(log_dir, run_ID, name, config):
         runner.train()

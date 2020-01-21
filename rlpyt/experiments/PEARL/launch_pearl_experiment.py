@@ -7,12 +7,15 @@ from exptools.launching.exp_launcher import run_experiments
 
 def get_default_config():
     return dict(
+        env= dict(
+            name= "hopper", # choose between: "hopper", "pr2", "walker"
+        ),
         tasks= dict(
-            n_train_tasks= 40,
-            n_eval_tasks= 10,
+            n_train_tasks= 20,
+            n_eval_tasks= 4,
         ),
         sampler= dict(
-            batch_T= 200,
+            batch_T= int(1e3),
             batch_B= 1,
             infer_context_period= 100,
             eval_max_steps=int(1e3),
@@ -49,8 +52,21 @@ def main(args):
     )
     default_config = get_default_config()
 
-    variants = [default_config]
-    log_dirs = ["pearl_walker2d_rand_params"]
+    # set up variants
+    variant_levels = list()
+
+    values = [
+        ["hopper",],
+        ["pr2",],
+        ["walker",],
+    ]
+    dir_names = ["{}".format(*v) for v in values]
+    keys = [("env", "name")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+
+    variants, log_dirs = make_variants(*variant_levels)
+    for i, variant in enumerate(variants):
+        variants[i] = update_config(default_config, variant)
 
     # setup for some debug option
     if args.debug:
@@ -61,7 +77,7 @@ def main(args):
     run_experiments(
         script="rlpyt/experiments/PEARL/pearl_experiment.py",
         affinity_code=affinity_code,
-        experiment_title=experiment_title,
+        experiment_title=experiment_title+("--debug" if args.debug else ""),
         runs_per_setting=1,
         variants=variants,
         log_dirs=log_dirs,

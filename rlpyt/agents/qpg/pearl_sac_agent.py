@@ -11,10 +11,10 @@ from rlpyt.models.qpg.latent_mlp import ContextInferModel, LatentQofMuMlpModel, 
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.distributions.gaussian import Gaussian, DistInfoStd
 from rlpyt.utils.buffer import buffer_to
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.models.utils import update_state_dict
 from rlpyt.samplers.collections import Context
-from rlpyt.utils.collections import namedarraytuple
+from exptools.collections import namedarraytuple
 
 
 MIN_LOG_STD = -20

@@ -10,7 +10,7 @@ from rlpyt.utils.buffer import buffer_to
 from rlpyt.utils.logging import logger
 from rlpyt.models.qpg.mlp import MuMlpModel, QofMuMlpModel
 from rlpyt.models.utils import update_state_dict
-from rlpyt.utils.collections import namedarraytuple
+from exptools.collections import namedarraytuple
 
 
 AgentInfo = namedarraytuple("AgentInfo", ["mu"])

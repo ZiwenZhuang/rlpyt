@@ -4,7 +4,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.parallel import DistributedDataParallelCPU as DDPC
 
 from rlpyt.utils.quick_args import save__init__args
-from rlpyt.utils.collections import namedarraytuple
+from exptools.collections import namedarraytuple
 from rlpyt.utils.synchronize import RWLock
 from rlpyt.utils.logging import logger
 from rlpyt.models.utils import strip_ddp_state_dict
