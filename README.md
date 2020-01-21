@@ -112,6 +112,69 @@ The class types perform the following roles:
     * **OptimizationInfo** - Diagnostics logged on a per-training batch basis.
     * **ReplayBuffer** - Storing and re-sampling from samples collected by `Collector`.
 
+### Common Code Procedure
+
+This is the example code telling you how the code framework is used working. Most of the code in this codebase is using the interface as this example showed.
+
+You can start to know how the codebase framework is working by reading this python pseudocode.
+
+```python
+  EnvCls
+  sampler = Sampler(EnvCls= EnvCls, ...)
+  algo = Algo(...)
+  agent = Agent(...)
+  runner = Runner(algo, agent, sampler, affinity, ...)
+
+  with logger_context(log_dir, run_ID, name, config):
+    runner.train() {
+      self.startup() {
+        example = self.sampler.initialize(self.agent, self.affinity, ...) {
+          envs = [EnvCls(...)]
+          self.collector = CollectorCls(envs, agent, ...)
+          self.collector.start_envs(); self.collector.start_agent()
+          self.samples_pyt = # a pytorch namedarraytuple sit in CPU that shares memory with another numpy.ndarray instance.
+          # All collected timesteps will be put in this instance.
+          return trajectory_example
+        }
+        self.agent.to_device(...)
+        self.algo.initialize(self.agent, example, ...) {
+          self.initialize_replay_buffer(exmaples, ...) {
+            # This is the replay buffer used in all common RL algorithm
+            self.replay_buffer = ReplayBuffer(...)
+          }
+          self.optim_initialize() # initialize optimizer as self attribute which is based on gradient information
+        }
+        self.initialize_logging()
+        return n_itr
+      }
+
+      for itr in range(n_itr):
+        with logger.prefix(f"itr #{itr} "):
+          self.agent.sample_mode(itr)
+          samples, traj_infos = self.sampler.obtain_samples(itr) {
+            ... = self.collector.collect_batch(...) # calling env.step(...) and agent.step(...) here.
+            return self.samples_pyt, ...
+          }          
+          self.agent.train_mode(itr)
+
+          opt_info = self.algo.optimize_agent(itr, samples) {
+            opt_info = OptInfo(...)
+            if samples is no None:
+              ...; self.replay_buffer.append_samples(...)
+            for _ in range(self.updates_per_optimize):
+              samples_from_replay = self.replay_buffer.sample_batch(...)
+              losses, ... = self.loss(samples_from_replay) # compute losses based on given RL algorithm
+              # Then, calling loss.backward(), _optimizer.step() ...
+              self.append_opt_info(opt_info) # add something into opt_info
+              # Do other things according to the algorithm
+            return opt_info
+          }
+          self.store_diagnostics(itr, traj_infos, opt_info)
+          # call self.evaluate_agent(...) if needed and self.log_diagnostics(...)
+      self.shutdown()
+    }
+```
+
 ### Historical, Scaling, Interfaces
 
 This code is a revision and extension of [accel_rl](https://github.com/astooke/accel_rl), which explored scaling RL in the Atari domain using Theano.  Scaling results were recorded here: [A. Stooke & P. Abbeel, "Accelerated Methods for Deep Reinforcement Learning"](https://arxiv.org/abs/1803.02811).  For an insightful study of batch-size scaling across deep learning including RL, see [S. McCandlish, et. al "An Empirical Model of Large-Batch Training"](https://arxiv.org/abs/1812.06162).
