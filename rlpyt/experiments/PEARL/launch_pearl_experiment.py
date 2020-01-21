@@ -47,7 +47,7 @@ def main(args):
     affinity_code = encode_affinity(
         n_cpu_core= 32,
         n_gpu= 8,
-        gpu_per_run= 2,
+        gpu_per_run= 1,
         contexts_per_gpu= 1,
     )
     default_config = get_default_config()
@@ -58,10 +58,18 @@ def main(args):
     values = [
         ["hopper",],
         ["pr2",],
-        ["walker",],
+        # ["walker",],
     ]
     dir_names = ["{}".format(*v) for v in values]
     keys = [("env", "name")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+    
+    values = [
+        [3e-5,],
+        [3e-7,],
+    ]
+    dir_names = ["lr{}".format(*v) for v in values]
+    keys = [("algo", "learning_rate")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     variants, log_dirs = make_variants(*variant_levels)

@@ -52,7 +52,7 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
         agent= agent,
         sampler= sampler,
         n_steps= 50e6,
-        log_interval_steps= 1e5,
+        log_interval_steps= 5e4,
         affinity= affinity
     )
     name = "pearl_"+config["env"]["name"]+"_rand_param"
