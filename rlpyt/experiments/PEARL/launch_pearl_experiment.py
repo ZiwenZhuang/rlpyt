@@ -24,13 +24,15 @@ def get_default_config():
         algo= dict(
             discount= 0.99,
             batch_size= 256,
+            min_steps_learn= int(1e4),
+            replay_ratio=4, # in oyster, it should be around 50
             target_update_tau= 0.005,
             learning_rate= 3e-4,
-            min_steps_learn= int(1e4),
-            n_step_return= 1,
             n_tasks_per_update= 5,
+            kl_lambda= 1,
             optim_kwargs= dict(),
             reward_scale= 5.,
+            n_step_return= 1,
             bootstrap_timelimit= False, # currently, I didn't figure out what it means.
         ),
         agent= dict(
@@ -69,20 +71,36 @@ def main(args):
 
     values = [
         [int(2e3),],
-        [int(0),],
+        # [int(0),],
     ]
     dir_names = ["{}steps_pre_learning".format(*v) for v in values]
     keys = [("algo", "min_steps_learn")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        [3e-4,],
-        # [3e-5,],
-        [3e-10,],
+        # [3e-4,],
+        [3e-6,],
+        # [3e-10,],
         [3e-16,],
     ]
     dir_names = ["lr{}".format(*v) for v in values]
     keys = [("algo", "learning_rate")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+
+    values = [
+        [.1],
+        [2.],
+    ]
+    dir_names = ["kl_lambda{}".format(*v) for v in values]
+    keys = [("algo", "kl_lambda")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+
+    values = [
+        [4],
+        [32],
+    ]
+    dir_names = ["replay_ratio{}".format(*v) for v in values]
+    keys = [("algo", "replay_ratio")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
@@ -110,7 +128,6 @@ def main(args):
     if args.debug:
         for variant in variants:
             variant["algo"]["min_steps_learn"]=int(2e2)
-            variant["algo"]["replay_ratio"]=128
 
     run_experiments(
         script="rlpyt/experiments/PEARL/pearl_experiment.py",
