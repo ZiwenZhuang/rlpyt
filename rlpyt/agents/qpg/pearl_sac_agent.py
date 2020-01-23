@@ -192,6 +192,19 @@ class PearlSacAgent(SacAgent):
         else:
             self.zs = self.z_means
         return self.zs
+    
+    def compute_latent_KL(self):
+        # Compute the kl divergence between latent z distribution
+        z_means = self.z_means
+        z_logstds = self.z_logstds
+        z_zeros = torch.zeros_like(z_means)
+        z_ones = torch.ones_like(z_logstds)
+        # NOTE: consider kl divergence is not commutative, you might need to check this later
+        kl_div = self.z_distribution.kl(
+            old_dist_info = DistInfoStd(mean= z_zeros, log_std= z_ones),
+            new_dist_info = DistInfoStd(mean= z_means, log_std= z_logstds)
+        )
+        return kl_div
 
     def detach_z(self):
         self.z = self.z.detach()

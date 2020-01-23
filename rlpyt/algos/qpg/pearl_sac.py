@@ -15,7 +15,12 @@ from rlpyt.utils.tensor import infer_leading_dims
 from rlpyt.samplers.collections import Context
 from rlpyt.replays.multitask import MultitaskReplayBuffer
 from rlpyt.algos.base import MetaRlAlgorithm
-from rlpyt.algos.qpg.sac import SAC, OptInfo, SamplesToBuffer
+from rlpyt.algos.qpg.sac import SAC, SamplesToBuffer
+
+OptInfo = namedtuple("OptInfo",
+    ["q1Loss", "q2Loss", "piLoss",
+    "q1GradNorm", "q2GradNorm", "piGradNorm",
+    "q1", "q2", "piMu", "piLogStd", "qMeanDiff", "alpha", "klLoss", "klGradNorm"])
 
 def merge_TB_in_each_task_batch(T, B, *tensors):
     """ Assuming each tensor is a torch.Tensor with leading dim (T, B) \\
@@ -97,9 +102,11 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
     '''
     def __init__(self,
             n_tasks_per_update= 5, # the number of tasks to sample in one optim.step() call
+            kl_lambda= 1, # the scaling factor when computing context encoder KL_div loss
             **kwargs,
             ):
         self.n_tasks_per_update = n_tasks_per_update
+        self.kl_lambda= kl_lambda
         super(PEARL_SAC, self).__init__(**kwargs)
 
     def initialize(self, agent, n_itr, batch_spec, mid_batch_reset, tasks_examples,
@@ -180,10 +187,17 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 tasks_samples_from_replay_batch = tasks_samples_from_replay[(ite_i*self.n_tasks_per_update):((ite_i+1)*self.n_tasks_per_update)]
                 # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
                 losses, values = self.loss(tasks_samples_from_replay_batch)
-                q1_loss, q2_loss, pi_loss, alpha_loss = losses
+                q1_loss, q2_loss, pi_loss, alpha_loss, kl_loss = losses
 
                 # ### Context model optimization is above all procedures
                 self.context_optimizer.zero_grad()
+
+                if kl_loss is not None:
+                    kl_loss.backward(retain_graph= True)
+                    kl_grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.encoder_model_parameters(),
+                        self.clip_grad_norm)
+                else:
+                    kl_grad_norm = 0
 
                 if alpha_loss is not None:
                     self.alpha_optimizer.zero_grad()
@@ -212,7 +226,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
 
                 self.context_optimizer.step()
 
-                grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm)
+                grad_norms = (q1_grad_norm, q2_grad_norm, pi_grad_norm, kl_grad_norm)
 
                 self.append_opt_info_(opt_info, losses, grad_norms, values)
                 self.update_counter += 1
@@ -247,7 +261,14 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             done=done,
         ))
         latent_z = self.agent.zs
-        # as designed, latent_z is stored in self.agent, we don't need to put it on the table for now.
+
+        # Compute KL divergence of context encoder (whose prediction), and name it kl_loss
+        if self.agent.encoder_model_kwargs["use_information_bottleneck"]:
+            kl_loss = self.kl_lambda * torch.mean(self.agent.compute_latent_KL())
+        else:
+            kl_loss = None
+
+        # compute as original SAC doing
         q1, q2 = self.agent.q(*agent_inputs, action, latent_z.detach())
         with torch.no_grad():
             target_action, target_log_pi, _ = self.agent.pi(*target_inputs, latent_z)
@@ -283,6 +304,30 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         else:
             alpha_loss = None
 
-        losses = (q1_loss, q2_loss, pi_loss, alpha_loss)
+        losses = (q1_loss, q2_loss, pi_loss, alpha_loss, kl_loss)
+        assert not (torch.isnan(q1_loss) or torch.isnan(q2_loss) or torch.isnan(pi_loss) or torch.isnan(alpha_loss) or torch.isnan(kl_loss))
         values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std))
         return losses, values
+
+
+    def append_opt_info_(self, opt_info, losses, grad_norms, values):
+        """ append all the `losses` and `grad_norms` and `values` into each attribute 
+            of `opt_info`
+        """
+        q1_loss, q2_loss, pi_loss, alpha_loss, kl_loss = losses
+        q1_grad_norm, q2_grad_norm, pi_grad_norm, kl_grad_norm = grad_norms
+        q1, q2, pi_mean, pi_log_std = values
+        opt_info.q1Loss.append(q1_loss.item())
+        opt_info.q2Loss.append(q2_loss.item())
+        opt_info.piLoss.append(pi_loss.item())
+        opt_info.q1GradNorm.append(q1_grad_norm)
+        opt_info.q2GradNorm.append(q2_grad_norm)
+        opt_info.piGradNorm.append(pi_grad_norm)
+        opt_info.q1.extend(q1[::10].numpy())  # Downsample for stats.
+        opt_info.q2.extend(q2[::10].numpy())
+        opt_info.piMu.extend(pi_mean[::10].numpy())
+        opt_info.piLogStd.extend(pi_log_std[::10].numpy())
+        opt_info.qMeanDiff.append(torch.mean(abs(q1 - q2)).item())
+        opt_info.alpha.append(self._alpha.item())
+        opt_info.klLoss.append(kl_loss.item())
+        opt_info.klGradNorm.append(kl_grad_norm)
