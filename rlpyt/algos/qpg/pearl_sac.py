@@ -305,8 +305,9 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             alpha_loss = None
 
         losses = (q1_loss, q2_loss, pi_loss, alpha_loss, kl_loss)
-        assert not (torch.isnan(q1_loss) or torch.isnan(q2_loss) or torch.isnan(pi_loss) or torch.isnan(alpha_loss) or torch.isnan(kl_loss))
         values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std))
+        if not (torch.isnan(q1_loss) or torch.isnan(q2_loss) or torch.isnan(pi_loss) or torch.isnan(alpha_loss) or torch.isnan(kl_loss)):
+            logger.log(f"Got loss nan. q1_loss: {q1_loss.numpy()}, q2_loss: {q2_loss.numpy()}, pi_loss: {pi_loss.numpy()}, alpha_loss: {pi_loss.numpy()}, kl_loss: {kl_loss.numpy()}")
         return losses, values
 
 
