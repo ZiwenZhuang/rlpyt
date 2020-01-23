@@ -28,6 +28,8 @@ Modular, optimized implementations of common deep RL algorithms in PyTorch, with
 * Modularity for easy modification / re-use of existing components.
 
 ### Implemented Algorithms
+**PEARL meta RL** [paper](http://arxiv.org/abs/1903.08254), [original_code](https://github.com/katerakelly/oyster). Refer to [README](https://github.com/ZiwenZhuang/rlpyt/tree/pearl/rlpyt/experiments/PEARL/README.md/) for more information.
+
 **Policy Gradient** A2C, PPO.
 
 **Replay Buffers** (supporting both DQN + QPG) non-sequence and sequence (for recurrent) replay, n-step returns, uniform or prioritized replay, full-observation or frame-based buffer (e.g. for Atari, stores only unique frames to save memory, reconstructs multi-frame observations).

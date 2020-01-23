@@ -26,8 +26,11 @@ def get_default_config():
             batch_size= 256,
             target_update_tau= 0.005,
             learning_rate= 3e-4,
+            min_steps_learn= int(1e4),
             n_step_return= 1,
+            n_tasks_per_update= 5,
             optim_kwargs= dict(),
+            reward_scale= 5.,
             bootstrap_timelimit= False, # currently, I didn't figure out what it means.
         ),
         agent= dict(
@@ -63,13 +66,40 @@ def main(args):
     dir_names = ["{}".format(*v) for v in values]
     keys = [("env", "name")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
+
+    values = [
+        [int(2e3),],
+        [int(0),],
+    ]
+    dir_names = ["{}steps_pre_learning".format(*v) for v in values]
+    keys = [("algo", "min_steps_learn")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        [3e-5,],
-        [3e-7,],
+        [3e-4,],
+        # [3e-5,],
+        [3e-10,],
+        [3e-16,],
     ]
     dir_names = ["lr{}".format(*v) for v in values]
     keys = [("algo", "learning_rate")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+    
+    values = [
+        # [5,],
+        [10,],
+    ]
+    dir_names = ["meta_batch{}".format(*v) for v in values]
+    keys = [("algo", "n_tasks_per_update")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+
+    values = [
+        # [5,],
+        [10,],
+        [20,],
+    ]
+    dir_names = ["batch_B{}".format(*v) for v in values]
+    keys = [("sampler", "batch_B")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     variants, log_dirs = make_variants(*variant_levels)
@@ -79,8 +109,8 @@ def main(args):
     # setup for some debug option
     if args.debug:
         for variant in variants:
-            variant["algo"]["min_steps_learn"]=0
-            variant["algo"]["replay_ratio"]=1
+            variant["algo"]["min_steps_learn"]=int(2e2)
+            variant["algo"]["replay_ratio"]=128
 
     run_experiments(
         script="rlpyt/experiments/PEARL/pearl_experiment.py",
