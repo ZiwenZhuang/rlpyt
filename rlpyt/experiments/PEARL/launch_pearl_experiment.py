@@ -51,7 +51,7 @@ def main(args):
         n_cpu_core= 32,
         n_gpu= 8,
         gpu_per_run= 1,
-        contexts_per_gpu= 1,
+        contexts_per_gpu= 4,
     )
     default_config = get_default_config()
 
