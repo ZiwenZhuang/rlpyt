@@ -192,6 +192,9 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 tasks_samples_from_replay_batch = tasks_samples_from_replay[(ite_i*self.n_tasks_per_update):((ite_i+1)*self.n_tasks_per_update)]
                 # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
                 losses, values = self.loss(tasks_samples_from_replay_batch)
+                if (losses is None) and (values is None):
+                    logger.log("opt_info: {opt_info}")
+                    exit(0)
                 q1_loss, q2_loss, pi_loss, alpha_loss, kl_loss = losses
 
                 # ### Context model optimization is above all procedures
@@ -268,7 +271,8 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         latent_z = self.agent.zs
         if torch.isnan(latent_z).any():
             logger.log(f"Got latent_z as nan, latent_z: {latent_z}")
-            exit(0)
+            logger.log(f"self.update_counter: {self.update_counter}")
+            return (None, None)
 
         # Compute KL divergence of context encoder (whose prediction), and name it kl_loss
         if self.agent.encoder_model_kwargs["use_information_bottleneck"]:
@@ -316,7 +320,8 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std))
         if torch.isnan(q1_loss) or torch.isnan(q2_loss) or torch.isnan(pi_loss) or torch.isnan(alpha_loss) or torch.isnan(kl_loss):
             logger.log(f"Got loss nan. q1_loss: {q1_loss}, q2_loss: {q2_loss}, pi_loss: {pi_loss}, alpha_loss: {alpha_loss}, kl_loss: {kl_loss}")
-            exit(0)
+            logger.log(f"self.update_counter: {self.update_counter}")
+            return (None, None)
         return losses, values
 
 
