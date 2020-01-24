@@ -13,7 +13,7 @@ from rlpyt.agents.base import AgentInputs
 from rlpyt.utils.buffer import buffer_to
 from rlpyt.utils.tensor import infer_leading_dims
 from rlpyt.samplers.collections import Context
-from rlpyt.replays.multitask import MultitaskReplayBuffer
+from rlpyt.replays.multitask import PearlReplayBuffer
 from rlpyt.algos.base import MetaRlAlgorithm
 from rlpyt.algos.qpg.sac import SAC, SamplesToBuffer
 
@@ -103,10 +103,14 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
     def __init__(self,
             n_tasks_per_update= 5, # the number of tasks to sample in one optim.step() call
             kl_lambda= 1, # the scaling factor when computing context encoder KL_div loss
+            update_samples_ratio= 1, # as replay buffer's description.
+            context_learning_rate= 1e-3,
             **kwargs,
             ):
         self.n_tasks_per_update = n_tasks_per_update
         self.kl_lambda= kl_lambda
+        self.update_samples_ratio = update_samples_ratio
+        self.context_learning_rate = context_learning_rate
         super(PEARL_SAC, self).__init__(**kwargs)
 
     def initialize(self, agent, n_itr, batch_spec, mid_batch_reset, tasks_examples,
@@ -135,7 +139,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
     def optim_initialize(self, rank= 0):
         super(PEARL_SAC, self).optim_initialize(rank)
         self.context_optimizer = self.OptimCls(self.agent.encoder_model_parameters(),
-            lr= self.learning_rate, **self.optim_kwargs)
+            lr= self.context_learning_rate, **self.optim_kwargs)
 
     def initialize_replay_buffer(self, tasks_example, batch_spec, async_=False):
         ''' Build a replay_buffer and assign it to `self.replay_buffer
@@ -161,7 +165,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             B=batch_spec.B,
             n_step_return=self.n_step_return,
         )
-        self.replay_buffer = MultitaskReplayBuffer(**replay_kwargs)
+        self.replay_buffer = PearlReplayBuffer(**replay_kwargs)
 
     def samples_to_buffer(self, tasks_samples):
         return [
@@ -171,8 +175,9 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
     def optimize_agent(self, itr, tasks_samples= None, sampler_itr= None):
         assert sampler_itr is None, "Not implemented async version for PEARL SAC"
         if tasks_samples is not None:
+            update_ratio = 1 if self.update_counter < 1 else self.update_samples_ratio
             tasks_samples_to_buffer = self.samples_to_buffer(tasks_samples)
-            self.replay_buffer.append_samples(tasks_samples_to_buffer)
+            self.replay_buffer.append_samples(tasks_samples_to_buffer, update_samples_ratio= update_ratio)
         opt_info = OptInfo(*([] for _ in range(len(OptInfo._fields))))
         if itr < self.min_itr_learn:
             return opt_info
@@ -261,6 +266,9 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
             done=done,
         ))
         latent_z = self.agent.zs
+        if torch.isnan(latent_z).any():
+            logger.log(f"Got latent_z as nan, latent_z: {latent_z}")
+            exit(0)
 
         # Compute KL divergence of context encoder (whose prediction), and name it kl_loss
         if self.agent.encoder_model_kwargs["use_information_bottleneck"]:
@@ -308,6 +316,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
         values = tuple(val.detach() for val in (q1, q2, pi_mean, pi_log_std))
         if torch.isnan(q1_loss) or torch.isnan(q2_loss) or torch.isnan(pi_loss) or torch.isnan(alpha_loss) or torch.isnan(kl_loss):
             logger.log(f"Got loss nan. q1_loss: {q1_loss}, q2_loss: {q2_loss}, pi_loss: {pi_loss}, alpha_loss: {alpha_loss}, kl_loss: {kl_loss}")
+            exit(0)
         return losses, values
 
 

@@ -28,8 +28,10 @@ def get_default_config():
             replay_ratio=4, # in oyster, it should be around 50
             target_update_tau= 0.005,
             learning_rate= 3e-4,
+            context_learning_rate= 3e-4,
             n_tasks_per_update= 5,
             kl_lambda= 1,
+            update_samples_ratio= 0.125,
             optim_kwargs= dict(),
             reward_scale= 5.,
             n_step_return= 1,
@@ -63,7 +65,7 @@ def main(args):
     values = [
         ["hopper",],
         ["pr2",],
-        # ["walker",],
+        ["walker",],
     ]
     dir_names = ["{}".format(*v) for v in values]
     keys = [("env", "name")]
@@ -78,18 +80,30 @@ def main(args):
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        # [3e-4,],
+        [3e-4,],
         [3e-6,],
-        # [3e-10,],
+        [3e-10,],
         [3e-16,],
+    ]
+    dir_names = ["contex_lr{}".format(*v) for v in values]
+    keys = [("algo", "context_learning_rate")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+    
+    values = [
+        [3e-4,],
+        # [3e-6,],
+        [3e-10,],
+        # [3e-16,],
     ]
     dir_names = ["lr{}".format(*v) for v in values]
     keys = [("algo", "learning_rate")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     values = [
+        [0.001],
         [.1],
-        [2.],
+        [1.],
+        [100],
     ]
     dir_names = ["kl_lambda{}".format(*v) for v in values]
     keys = [("algo", "kl_lambda")]
@@ -98,14 +112,17 @@ def main(args):
     values = [
         [4],
         [32],
+        [50],
+        [64],
     ]
     dir_names = ["replay_ratio{}".format(*v) for v in values]
     keys = [("algo", "replay_ratio")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        # [5,],
+        [5,],
         [10,],
+        [20],
     ]
     dir_names = ["meta_batch{}".format(*v) for v in values]
     keys = [("algo", "n_tasks_per_update")]
@@ -133,7 +150,7 @@ def main(args):
         script="rlpyt/experiments/PEARL/pearl_experiment.py",
         affinity_code=affinity_code,
         experiment_title=experiment_title+("--debug" if args.debug else ""),
-        runs_per_setting=1,
+        runs_per_setting=4,
         variants=variants,
         log_dirs=log_dirs,
         debug_mode=args.debug,
