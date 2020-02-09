@@ -105,7 +105,8 @@ class SerialMultitaskSampler(MultitaskBaseSampler):
             param kwargs: all fed into each single sampler
         '''
         B = self.batch_spec.B
-        env = self.EnvCls(task= self.tasks[0], **self.env_kwargs)
+        env = self.EnvCls(**self.env_kwargs)
+        env.set_task(self.tasks[0])
         global_B = B * world_size
         env_ranks = list(range(rank * B, (rank + 1) * B))
         tasks_agent_inputs, tasks_traj_infos = [], []
@@ -117,7 +118,8 @@ class SerialMultitaskSampler(MultitaskBaseSampler):
             for k, v in traj_info_kwargs.items():
                 setattr(self.TrajInfoCls, "_" + k, v)  # Avoid passing at init.
         for task in self.tasks:
-            envs = [self.EnvCls(task= task, **self.env_kwargs) for _ in range(self.batch_spec.B)]
+            envs = [self.EnvCls(**self.env_kwargs) for _ in range(self.batch_spec.B)]
+            for env in envs: env.set_task(task)
             samples_pyt, samples_np, examples = \
                 build_samples_buffer(agent, envs[0],
                 self.batch_spec, bootstrap_value, agent_shared=False,
@@ -145,7 +147,8 @@ class SerialMultitaskSampler(MultitaskBaseSampler):
         # We build eval envs for eval tasks
         if self.eval_n_envs_per_task > 0 and len(self.eval_tasks) > 0:
             for task in self.eval_tasks:
-                eval_envs = [self.EnvCls(task= task, **self.eval_env_kwargs) for _ in range(self.eval_n_envs_per_task)]
+                eval_envs = [self.EnvCls(**self.eval_env_kwargs) for _ in range(self.eval_n_envs_per_task)]
+                for env in eval_envs: env.set_task(task)
                 self.eval_tasks_collectors.append(self.eval_CollectorCls(
                     envs=eval_envs,
                     agent=agent,

@@ -5,10 +5,10 @@ code-base. \\
 from rlpyt.envs.base import Env
 
 class MultitaskEnv(Env):
-    def __init__(self, task= None, **kwargs):
-        """ NOTE: environment should be able to be formed directly with input 
-        `task` or sample one if `task` is None (depends on the implementation)
-        """
+    ''' The environment that handles different task.
+    By task, it means an object accessable for this env instance.
+    '''
+    def __init__(self, **kwargs):
         pass
 
     # Maybe only one of the method is implemented in the class

@@ -14,7 +14,7 @@ class RandParamEnv(MultitaskEnv):
     """ A interface wrapping for the rand_param_envs. \\
         To use it, please install the environment manually.
     """
-    def __init__(self, EnvCls, task= None, **env_kwargs):
+    def __init__(self, EnvCls, **env_kwargs):
         """ Different from this repo protocol, the kwargs will be used directly to build
         one of the rand_param_envs given EnvCls.
 
@@ -24,8 +24,6 @@ class RandParamEnv(MultitaskEnv):
             env_kwargs: the kwargs that feed into EnvCls for building the environment instance
         """
         self._wrapped_env = EnvCls(**env_kwargs)
-        if not task is None:
-            self._wrapped_env.set_task(task)
 
         # get them via @property method
         self._observation_space = FloatBox(low= self._wrapped_env.observation_space.low, high= self._wrapped_env.observation_space.high)
