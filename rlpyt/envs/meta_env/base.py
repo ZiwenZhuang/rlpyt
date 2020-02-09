@@ -13,7 +13,7 @@ class MultitaskEnv(Env):
 
     # Maybe only one of the method is implemented in the class
     @staticmethod
-    def static_smaple_tasks(n_tasks):
+    def static_sample_tasks(n_tasks):
         """ Return a list of tasks that is valid in this environment. \\
             We don't specify that `task` should be in here, as long as each
             task can be accepted by the `__init__` function of its own.
