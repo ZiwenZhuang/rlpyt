@@ -11,7 +11,7 @@ class MultitaskEnv(Env):
     def __init__(self, **kwargs):
         pass
 
-    # Maybe only one of the method is implemented in the class
+    # Maybe none of the method is implemented in the class
     @staticmethod
     def static_sample_tasks(n_tasks):
         """ Return a list of tasks that is valid in this environment. \\
