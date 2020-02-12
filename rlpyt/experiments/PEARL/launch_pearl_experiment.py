@@ -46,7 +46,11 @@ def get_default_config():
             model_kwargs= dict(hidden_sizes= [300, 300, 300]),
             q_model_kwargs= dict(hidden_sizes= [300, 300, 300]),
             v_model_kwargs= dict(hidden_sizes= [300, 300, 300]),
-        )
+        ),
+        runner= dict( # add options for debugging
+            n_steps= 50e6,
+            log_interval_steps= 5e4,
+        ),
     )
 
 def main(args):
@@ -145,6 +149,7 @@ def main(args):
     if args.debug:
         for variant in variants:
             variant["algo"]["min_steps_learn"]=int(2e2)
+            variant["runner"]["log_interval_steps"]=2e2
 
     run_experiments(
         script="rlpyt/experiments/PEARL/pearl_experiment.py",
