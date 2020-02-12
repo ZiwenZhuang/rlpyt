@@ -100,6 +100,8 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 .qf1, .qf2, .vf several pytorch module
 
     '''
+    opt_info_fields = tuple(f for f in OptInfo._fields)  # copy
+
     def __init__(self,
             n_tasks_per_update= 5, # the number of tasks to sample in one optim.step() call
             kl_lambda= 1, # the scaling factor when computing context encoder KL_div loss

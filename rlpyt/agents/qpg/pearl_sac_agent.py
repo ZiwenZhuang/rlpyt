@@ -5,7 +5,7 @@ from collections import namedtuple
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.parallel import DistributedDataParallelCPU as DDPC
 
-from rlpyt.agents.base import AgentStep
+from rlpyt.agents.base import AgentStep, BaseAgent
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.models.qpg.latent_mlp import ContextInferModel, LatentQofMuMlpModel, LatentPiMlpModel
 from rlpyt.utils.quick_args import save__init__args
@@ -210,8 +210,15 @@ class PearlSacAgent(SacAgent):
         self.z = self.z.detach()
 
     def sample_mode(self, itr):
+        # To prevent keep printing because the corespoinding sampler might switch
+        # its mode over and over again.
+        BaseAgent.sample_mode(self, itr)
         self.encoder_model.eval()
-        super().sample_mode(itr)
+        self.q1_model.eval()
+        self.q2_model.eval()
+        # no printing logs here, which prints in sac_agent
+        std = None if itr >= self.min_itr_learn else self.pretrain_std
+        self.distribution.set_std(std)  # If None: std from policy dist_info.
 
     def train_mode(self, itr):
         super().train_mode(itr)
