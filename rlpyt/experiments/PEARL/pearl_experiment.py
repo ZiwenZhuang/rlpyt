@@ -48,6 +48,13 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
         EnvCls = PointEnv
         env_ = PointEnv(**config["env"]["kwargs"])
         common_env_kwargs = dict(**config["env"]["kwargs"])
+    elif config["env"]["name"] == "sparse_point_robot":
+        from rlpyt.envs.meta_env.point_robot import SparsePointEnv
+        EnvCls = SparsePointEnv
+        env_ = SparsePointEnv(**config["env"]["kwargs"])
+        common_env_kwargs = dict(**config["env"]["kwargs"])
+    else:
+        raise NotImplementedError
     tasks = env_.sample_tasks(config["tasks"]["n_train_tasks"] + config["tasks"]["n_eval_tasks"])
     train_tasks = tuple(tasks[:config["tasks"]["n_train_tasks"]])
     eval_tasks = tuple(tasks[config["tasks"]["n_train_tasks"]:])

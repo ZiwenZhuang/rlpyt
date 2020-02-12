@@ -193,7 +193,7 @@ class PEARL_SAC(MetaRlAlgorithm, SAC):
                 # Now, tasks_samples_from_replays are a dictionary with (num_tasks, batch_size, feat)
                 losses, values = self.loss(tasks_samples_from_replay_batch)
                 if (losses is None) and (values is None):
-                    logger.log("opt_info: {opt_info}")
+                    logger.log(f"opt_info: {opt_info}")
                     exit(0)
                 q1_loss, q2_loss, pi_loss, alpha_loss, kl_loss = losses
 

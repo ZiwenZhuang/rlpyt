@@ -14,8 +14,8 @@ def get_default_config():
             ),
         ),
         tasks= dict(
-            n_train_tasks= 20,
-            n_eval_tasks= 4,
+            n_train_tasks= 40,
+            n_eval_tasks= 10,
         ),
         sampler= dict(
             batch_T= int(1e3),
@@ -27,16 +27,16 @@ def get_default_config():
         algo= dict(
             discount= 0.99,
             batch_size= 256,
-            min_steps_learn= int(1e4),
+            min_steps_learn= int(400),
             replay_ratio=4, # in oyster, it should be around 50
             target_update_tau= 0.005,
             learning_rate= 3e-4,
             context_learning_rate= 3e-4,
             n_tasks_per_update= 5,
-            kl_lambda= 1,
+            kl_lambda= .1,
             update_samples_ratio= 0.125,
             optim_kwargs= dict(),
-            reward_scale= 5.,
+            reward_scale= 100.,
             n_step_return= 1,
             bootstrap_timelimit= False, # currently, I didn't figure out what it means.
         ),
@@ -53,7 +53,7 @@ def get_default_config():
     )
 
 def main(args):
-    experiment_title = "pearl_reproduction"
+    experiment_title = "pearl_point_robot"
     affinity_code = encode_affinity(
         n_cpu_core= 32,
         n_gpu= 4,
@@ -82,28 +82,28 @@ def main(args):
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        [3e-4,],
-        [3e-6,],
-        # [3e-10,],
         [3e-16,],
+        # [3e-10,],
+        [3e-6,],
+        [3e-4,],
     ]
     dir_names = ["contex_lr{}".format(*v) for v in values]
     keys = [("algo", "context_learning_rate")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        [3e-4,],
-        # [3e-6,],
-        [3e-10,],
         # [3e-16,],
+        [3e-10,],
+        # [3e-6,],
+        [3e-4,],
     ]
     dir_names = ["lr{}".format(*v) for v in values]
     keys = [("algo", "learning_rate")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     values = [
-        [0.001],
-        # [.1],
+        # [0.001],
+        [.1],
         # [1.],
         [100],
     ]
@@ -122,18 +122,18 @@ def main(args):
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        [5,],
-        # [10,],
         [20],
+        # [10,],
+        [5,],
     ]
     dir_names = ["meta_batch{}".format(*v) for v in values]
     keys = [("algo", "n_tasks_per_update")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     values = [
-        # [5,],
-        [10,],
         [20,],
+        [10,],
+        # [5,],
     ]
     dir_names = ["batch_B{}".format(*v) for v in values]
     keys = [("sampler", "batch_B")]
