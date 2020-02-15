@@ -84,5 +84,33 @@ class MetaRlBase(MinibatchRl, MinibatchRlEval, BaseRunner): # MinibatchRlBase is
     def log_diagnostics(self, itr, tasks_eval_traj_infos, eval_time):
         # Each value in tasks_traj_infos should be a list of TrajInfoCls instance.
         # I just add them together
-        traj_infos = [i for j in tasks_eval_traj_infos for i in j]
-        MinibatchRlEval.log_diagnostics(self, itr, traj_infos, eval_time)
+        eval_traj_infos = [i for j in tasks_eval_traj_infos for i in j]
+        MinibatchRlEval.log_diagnostics(self, itr, eval_traj_infos, eval_time)
+
+    def _log_infos(self, traj_infos= None):
+        """ Based on the control flow, the experiment info will finally searching `_log_infos`
+        from here. So, the operations are override here.
+        NOTE: there are two different types of trajectory, the one input here should be
+        eval_traj_infos
+        """
+
+        # self.traj_infos is (train) traj_infos
+        if self._traj_infos:
+            for k in self._traj_infos[0]:
+                if not k.startswith("_"):
+                    # assuming the `k` is str
+                    logger.record_tabular_misc_stat(k,
+                        [info[k] for info in self._traj_infos])
+        # input from param is eval_traj_infos
+        if traj_infos is not None and traj_infos:
+            for k in traj_infos[0]:
+                if not k.startswith("_"):
+                    # assuming the `k` is str
+                    logger.record_tabular_misc_stat("Eval" + k,
+                        [info[k] for info in traj_infos])
+
+        # The rest is the same as MinibatchRlBase._log_infos
+        if self._opt_infos:
+            for k, v in self._opt_infos.items():
+                logger.record_tabular_misc_stat(k, v)
+        self._opt_infos = {k: list() for k in self._opt_infos}  # (reset)
