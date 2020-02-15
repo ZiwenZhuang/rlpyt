@@ -11,6 +11,7 @@ def get_default_config():
             name= "point_robot", # choose between: "hopper", "pr2", "walker"
             kwargs= dict(
                 n_tasks= 100, # Based on point_robot environment, this number can be randomly chosen.
+                randomize_tasks= True,
             ),
         ),
         tasks= dict(
@@ -60,7 +61,7 @@ def main(args):
     experiment_title = "pearl_point_robot"
     affinity_code = encode_affinity(
         n_cpu_core= 32,
-        n_gpu= 4,
+        n_gpu= 8,
         gpu_per_run= 1,
         contexts_per_gpu= 4,
     )
@@ -98,7 +99,7 @@ def main(args):
     values = [
         # [3e-16,],
         [3e-10,],
-        # [3e-6,],
+        [3e-6,],
         [3e-4,],
     ]
     dir_names = ["lr{}".format(*v) for v in values]
@@ -108,8 +109,8 @@ def main(args):
     values = [
         # [0.001],
         [.1],
-        # [1.],
-        [100],
+        [10.],
+        # [100],
     ]
     dir_names = ["kl_lambda{}".format(*v) for v in values]
     keys = [("algo", "kl_lambda")]
@@ -119,16 +120,16 @@ def main(args):
         # [4],
         [32],
         # [50],
-        [64],
+        # [64],
     ]
     dir_names = ["replay_ratio{}".format(*v) for v in values]
     keys = [("algo", "replay_ratio")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
     
     values = [
-        [20],
-        # [10,],
-        [5,],
+        # [20],
+        [16,],
+        # [5,],
     ]
     dir_names = ["meta_batch{}".format(*v) for v in values]
     keys = [("algo", "n_tasks_per_update")]
