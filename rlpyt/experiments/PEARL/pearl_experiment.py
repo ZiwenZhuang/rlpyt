@@ -17,7 +17,6 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
     affinity = affinity_from_code(affinity_code)
     if isinstance(affinity, list):
         affinity = affinity[0]
-    affinity["cuda_idx"] = affinity["cuda_idx"] +4
     config = load_variant(log_dir)
 
     # make a environment and extract tasks, sample at once prevents tasks duplicate

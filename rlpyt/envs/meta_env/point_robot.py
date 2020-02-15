@@ -20,7 +20,7 @@ class PointEnv(Env, MultitaskEnv):
      - done_threshold is the radius when the state is in the goal radius
     """
 
-    def __init__(self, randomize_tasks=False, n_tasks=2, done_threshold= 0.2):
+    def __init__(self, randomize_tasks=False, n_tasks=2, done_threshold= 2e-6):
 
         if randomize_tasks:
             np.random.seed(1337)
@@ -108,8 +108,7 @@ class SparsePointEnv(PointEnv):
             goals = np.stack([xs, ys], axis=1)
             np.random.shuffle(goals)
             goals = goals.tolist()
-
-        self.goals = goals
+            self.goals = goals
         self.reset_task(0)
 
     def sparsify_rewards(self, r):
