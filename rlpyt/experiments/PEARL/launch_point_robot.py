@@ -137,12 +137,19 @@ def main(args):
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     values = [
-        [20,],
-        [10,],
-        # [5,],
+        # [20,],
+        # [10,],
+        [5,],
     ]
     dir_names = ["batch_B{}".format(*v) for v in values]
     keys = [("sampler", "batch_B")]
+    variant_levels.append(VariantLevel(keys, values, dir_names))
+
+    values = [
+        int(5e3),
+    ]
+    dir_names = ["batch_T{}".format(*v) for v in values]
+    keys = [("sampler", "batch_T")]
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     variants, log_dirs = make_variants(*variant_levels)
