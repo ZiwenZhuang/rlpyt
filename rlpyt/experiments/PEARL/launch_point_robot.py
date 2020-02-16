@@ -12,6 +12,7 @@ def get_default_config():
             kwargs= dict(
                 n_tasks= 100, # Based on point_robot environment, this number can be randomly chosen.
                 randomize_tasks= True,
+                max_timesteps= 200,
             ),
         ),
         tasks= dict(
