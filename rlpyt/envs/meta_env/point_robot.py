@@ -17,10 +17,10 @@ class PointEnv(Env, MultitaskEnv):
     tasks (aka goals) are positions on the plane
      - tasks sampled from unit square
      - reward is L2 distance
-     - done_threshold is the radius when the state is in the goal radius
+     - max_timesteps, when reaching this value, `done` will be set to true and environment will reset
     """
 
-    def __init__(self, randomize_tasks=False, n_tasks=2, done_threshold= 2e-6):
+    def __init__(self, randomize_tasks=False, n_tasks=2, max_timesteps= 200):
 
         if randomize_tasks:
             np.random.seed(1337)
@@ -39,7 +39,7 @@ class PointEnv(Env, MultitaskEnv):
                      ]
             goals = [g / 10. for g in goals]
         self.goals = goals
-        self.done_threshold = done_threshold
+        self.max_timesteps = max_timesteps
 
         self.reset_task(0)
         self.observation_space = FloatBox(low=-np.inf, high=np.inf, shape=(2,))
@@ -66,18 +66,22 @@ class PointEnv(Env, MultitaskEnv):
         return self._get_obs()
 
     def reset(self):
+        self.num_timesteps = 0
         return self.reset_model()
 
     def _get_obs(self):
         return np.copy(self._state).astype(np.float32)
 
     def step(self, action):
+        self.num_timesteps += 1
         self._state = self._state + action
         x, y = self._state
         x -= self._goal[0]
         y -= self._goal[1]
         reward = - (x ** 2 + y ** 2) ** 0.5
-        done = 1 if reward < self.done_threshold else 0
+        done = 1 if self.num_timesteps >= self.max_timesteps else 0
+        if done:
+            self.reset()
         ob = self._get_obs()
         return EnvStep(ob, reward, done, EnvInfo(np.nan))
 
@@ -122,7 +126,7 @@ class SparsePointEnv(PointEnv):
         return self._get_obs()
 
     def step(self, action):
-        ob, reward, done, d = super().step(action)
+        ob, reward, done, _ = super().step(action)
         sparse_reward = self.sparsify_rewards(reward)
         # make sparse rewards positive
         if reward >= -self.goal_radius:
