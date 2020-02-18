@@ -96,10 +96,11 @@ class SparsePointEnv(PointEnv):
     '''
      - tasks sampled from unit half-circle
      - reward is L2 distance given only within goal radius
+     - max_timesteps, when reaching this value, `done` will be set to true and environment will reset
      NOTE that `step()` returns the dense reward because this is used during meta-training
      the algorithm should call `sparsify_rewards()` to get the sparse rewards
      '''
-    def __init__(self, randomize_tasks=False, n_tasks=2, goal_radius=0.2):
+    def __init__(self, randomize_tasks=False, n_tasks=2, goal_radius=0.2, max_timesteps= 200):
         super().__init__(randomize_tasks, n_tasks)
         self.goal_radius = goal_radius
 
