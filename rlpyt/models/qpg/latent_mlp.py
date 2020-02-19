@@ -83,7 +83,7 @@ class LatentMuMlpModel(torch.nn.Module):
     def forward(self, observation, prev_action, prev_reward, latent_z):
         lead_dim, T, B, _ = infer_leading_dims(observation, self._obs_ndim)
         assert B == latent_z.shape[0], "Please check the batch_size of the latent space of the agent"
-        mu_intput = torch.cat([
+        mu_input = torch.cat([
             observation.view(T * B, -1),
             torch.stack(T * [latent_z.view(B, -1)], dim=0)
         ], dim=1)
