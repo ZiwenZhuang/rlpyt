@@ -5,9 +5,21 @@ from rlpyt.samplers.parallel.gpu.action_server import (AlternatingActionServer,
 
 
 class AlternatingSamplerBase(GpuSamplerBase):
-    """Environment instances divided in two; while one set steps, the GPU gets the action
-    for the other set.  That set waits for actions to be returned and for the opposite set
-    to finish execution before starting (as managed by semaphores here)."""
+    """Twice the standard number of worker processes are forked, and they may
+    share CPU resources in pairs.  Environment instances are divided evenly
+    among the two sets.  While one set of workers steps their environments,
+    the action-server process computes the actions for the other set of
+    workers, which are paused until their new actions are ready (this pause
+    happens in the GpuSampler).  The two sets of workers alternate in this
+    procedure, keeping the CPU maximally busy.  The intention is to hide the
+    time to compute actions from the critical path of execution, which can
+    provide up to a 2x speed boost in theory, if the environment-step time and
+    agent-step time were othewise equal.
+
+    If the latency in computing and returning the agent's action is longer
+    than environment stepping, then this alternation might not be faster,
+    because it calls agent action selection twice as many times.
+    """
 
     alternating = True
 
@@ -16,6 +28,8 @@ class AlternatingSamplerBase(GpuSamplerBase):
         assert self.batch_spec.B % 2 == 0, "Need even number for sampler batch_B."
 
     def initialize(self, agent, *args, **kwargs):
+        """Like the super class's ``initialize()``, but creates additional set of
+        synchronization and communication objects for the alternate workers."""
         if agent.recurrent and not agent.alternating:
             raise TypeError("If agent is recurrent, must be 'alternating' to use here.")
         elif not agent.recurrent:
@@ -39,8 +53,8 @@ class AlternatingSamplerBase(GpuSamplerBase):
             self.eval_agent_inputs_pair = (self.eval_agent_inputs[:eval_half_B],
                 self.eval_agent_inputs[eval_half_B:])
         if "bootstrap_value" in self.samples_np.agent:
-            self.bootstrap_value_pair = (self.samples_np.agent.bootstrap_value[:half_B],
-                self.samples_np.agent.bootstrap_value[half_B:])
+            self.bootstrap_value_pair = (self.samples_np.agent.bootstrap_value[0, :half_B],
+                self.samples_np.agent.bootstrap_value[0, half_B:])  # (leading dim T=1)
 
     def _get_n_envs_list(self, affinity=None, n_worker=None, B=None):
         if affinity is not None:

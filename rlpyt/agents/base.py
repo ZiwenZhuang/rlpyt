@@ -4,7 +4,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.parallel import DistributedDataParallelCPU as DDPC
 
 from rlpyt.utils.quick_args import save__init__args
-from rlpyt.utils.collections import namedarraytuple
+from exptools.collections import namedarraytuple
 from rlpyt.utils.synchronize import RWLock
 from rlpyt.utils.logging import logger
 from rlpyt.models.utils import strip_ddp_state_dict
@@ -31,6 +31,11 @@ space)
     alternating = False
 
     def __init__(self, ModelCls=None, model_kwargs=None, initial_model_state_dict=None):
+        """
+        Parameters
+        ----------
+            param ModelCls: the constructor to build self.model which serves as policy network.
+        """
         save__init__args(locals())
         self.model = None  # type: torch.nn.Module
         self.shared_model = None
@@ -112,9 +117,11 @@ space)
         raise NotImplementedError  # return type: AgentStep
 
     def reset(self):
+        """Reset all batch of agent state"""
         pass
 
     def reset_one(self, idx):
+        """In terms of batch, reset one of the batch given idx"""
         pass
 
     def parameters(self):
