@@ -15,7 +15,10 @@ SamplesFromReplayTL = namedarraytuple("SamplesFromReplayTL",
 
 
 class NStepTimeLimitBuffer(NStepReturnBuffer):
-    """For use in e.g. SAC when bootstrapping when 'done' due to timeout."""
+    """For use in e.g. SAC when bootstrapping when env `done` due to timeout.
+    Expects input samples to include ``timeout`` field, and returns
+    ``timeout`` and ``timeout_n`` similar to ``done`` and ``done_n``.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,7 +49,7 @@ class NStepTimeLimitBuffer(NStepReturnBuffer):
         else:
             idxs = np.arange(t - nm1, t - nm1 + T) % T
             to_idxs = np.arange(t, t + T) % T
-        self.samples_timeout_n[idxs] = (self.done_n[idxs] *
+        self.samples_timeout_n[idxs] = (self.samples_done_n[idxs] *
             self.samples.timeout[to_idxs])
 
 

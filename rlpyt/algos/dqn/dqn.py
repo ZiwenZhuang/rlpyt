@@ -18,8 +18,10 @@ SamplesToBuffer = namedarraytuple("SamplesToBuffer",
 
 
 class DQN(RlAlgorithm):
-    """DQN with options for: Double-DQN, Dueling Architecture, n-step returns,
-    prioritized replay."""
+    """
+    DQN algorithm trainig from a replay buffer, with options for double-dqn, n-step
+    returns, and prioritized replay.
+    """
 
     opt_info_fields = tuple(f for f in OptInfo._fields)  # copy
 
@@ -31,6 +33,7 @@ class DQN(RlAlgorithm):
             delta_clip=1.,
             replay_size=int(1e6),
             replay_ratio=8,  # data_consumption / data_generation.
+            target_update_tau=1,
             target_update_interval=312,  # 312 * 32 = 1e4 env steps.
             n_step_return=1,
             learning_rate=2.5e-4,
@@ -53,6 +56,15 @@ class DQN(RlAlgorithm):
             ReplayBufferCls=None,  # Leave None to select by above options.
             updates_per_sync=1,  # For async mode only.
             ):
+        """Saves input arguments.  
+
+        ``delta_clip`` selects the Huber loss; if ``None``, uses MSE.
+
+        ``replay_ratio`` determines the ratio of data-consumption
+        to data-generation.  For example, original DQN sampled 4 environment steps between
+        each training update with batch-size 32, for a replay ratio of 8.
+
+        """ 
         if optim_kwargs is None:
             optim_kwargs = dict(eps=0.01 / batch_size)
         if default_priority is None:
@@ -64,7 +76,10 @@ class DQN(RlAlgorithm):
 
     def initialize(self, agent, n_itr, batch_spec, mid_batch_reset, examples,
             world_size=1, rank=0):
-        """Used in basic or synchronous multi-GPU runners, not async."""
+        """Stores input arguments and initializes replay buffer and optimizer.
+        Use in non-async runners.  Computes number of gradient updates per
+        optimization iteration as `(replay_ratio * sampler-batch-size /
+        training-batch_size)`."""
         self.agent = agent
         self.n_itr = n_itr
         self.sampler_bs = sampler_bs = batch_spec.size
@@ -83,7 +98,8 @@ class DQN(RlAlgorithm):
 
     def async_initialize(self, agent, sampler_n_itr, batch_spec, mid_batch_reset,
             examples, world_size=1):
-        """Used in async runner only."""
+        """Used in async runner only; returns replay buffer allocated in shared
+        memory, does not instantiate optimizer. """
         self.agent = agent
         self.n_itr = sampler_n_itr
         self.initialize_replay_buffer(examples, batch_spec, async_=True)
@@ -97,7 +113,7 @@ class DQN(RlAlgorithm):
         return self.replay_buffer
 
     def optim_initialize(self, rank=0):
-        """Called by async runner."""
+        """Called in initilize or by async runner after forking sampler."""
         self.rank = rank
         self.optimizer = self.OptimCls(self.agent.parameters(),
             lr=self.learning_rate, **self.optim_kwargs)
@@ -107,6 +123,12 @@ class DQN(RlAlgorithm):
             self.pri_beta_itr = max(1, self.pri_beta_steps // self.sampler_bs)
 
     def initialize_replay_buffer(self, examples, batch_spec, async_=False):
+        """
+        Allocates replay buffer using examples and with the fields in `SamplesToBuffer`
+        namedarraytuple.  Uses frame-wise buffers, so that only unique frames are stored,
+        using less memory (usual observations are 4 most recent frames, with only newest
+        frame distince from previous observation).
+        """
         example_to_buffer = SamplesToBuffer(
             observation=examples["observation"],
             action=examples["action"],
@@ -134,6 +156,13 @@ class DQN(RlAlgorithm):
         self.replay_buffer = ReplayCls(**replay_kwargs)
 
     def optimize_agent(self, itr, samples=None, sampler_itr=None):
+        """
+        Extracts the needed fields from input samples and stores them in the 
+        replay buffer.  Then samples from the replay buffer to train the agent
+        by gradient updates (with the number of updates determined by replay
+        ratio, sampler batch size, and training batch size).  If using prioritized
+        replay, updates the priorities for sampled training batches.
+        """
         itr = itr if sampler_itr is None else sampler_itr  # Async uses sampler_itr.
         if samples is not None:
             samples_to_buffer = self.samples_to_buffer(samples)
@@ -156,11 +185,14 @@ class DQN(RlAlgorithm):
             opt_info.tdAbsErr.extend(td_abs_errors[::8].numpy())  # Downsample.
             self.update_counter += 1
             if self.update_counter % self.target_update_interval == 0:
-                self.agent.update_target()
+                self.agent.update_target(self.target_update_tau)
         self.update_itr_hyperparams(itr)
         return opt_info
 
     def samples_to_buffer(self, samples):
+        """Defines how to add data from sampler into the replay buffer. Called
+        in optimize_agent() if samples are provided to that method.  In 
+        asynchronous mode, will be called in the memory_copier process."""
         return SamplesToBuffer(
             observation=samples.env.observation,
             action=samples.agent.action,
@@ -169,7 +201,25 @@ class DQN(RlAlgorithm):
         )
 
     def loss(self, samples):
-        """Samples have leading batch dimension [B,..] (but not time)."""
+        """
+        Computes the Q-learning loss, based on: 0.5 * (Q - target_Q) ^ 2.
+        Implements regular DQN or Double-DQN for computing target_Q values
+        using the agent's target network.  Computes the Huber loss using 
+        ``delta_clip``, or if ``None``, uses MSE.  When using prioritized
+        replay, multiplies losses by importance sample weights.
+
+        Input ``samples`` have leading batch dimension [B,..] (but not time).
+
+        Calls the agent to compute forward pass on training inputs, and calls
+        ``agent.target()`` to compute target values.
+
+        Returns loss and TD-absolute-errors for use in prioritization.
+
+        Warning: 
+            If not using mid_batch_reset, the sampler will only reset environments
+            between iterations, so some samples in the replay buffer will be
+            invalid.  This case is not supported here currently.
+        """
         qs = self.agent(*samples.agent_inputs)
         q = select_at_indexes(samples.action, qs)
         with torch.no_grad():
@@ -194,9 +244,13 @@ class DQN(RlAlgorithm):
         if self.delta_clip is not None:
             td_abs_errors = torch.clamp(td_abs_errors, 0, self.delta_clip)
         if not self.mid_batch_reset:
-            valid = valid_from_done(samples.done)
-            loss = valid_mean(losses, valid)
-            td_abs_errors *= valid
+            # FIXME: I think this is wrong, because the first "done" sample
+            # is valid, but here there is no [T] dim, so there's no way to
+            # know if a "done" sample is the first "done" in the sequence.
+            raise NotImplementedError
+            # valid = valid_from_done(samples.done)
+            # loss = valid_mean(losses, valid)
+            # td_abs_errors *= valid
         else:
             loss = torch.mean(losses)
 

@@ -7,7 +7,11 @@ from rlpyt.utils.buffer import buffer_method
 
 
 class GpuResetCollector(DecorrelatingStartCollector):
-    """Valid to run episodic lives."""
+    """Collector which communicates observations to an action-server, which in
+    turn provides the agent's actions (i.e. use in GPU samplers).
+
+    Environment reset logic is the same as in ``CpuResetCollector``.
+    """
 
     mid_batch_reset = True
 
@@ -48,7 +52,11 @@ class GpuResetCollector(DecorrelatingStartCollector):
 
 
 class GpuWaitResetCollector(DecorrelatingStartCollector):
-    """Valid to run episodic lives."""
+    """Collector which communicates observations to an action-server, which in
+    turn provides the agent's actions (i.e. use in GPU samplers).
+
+    Environment reset logic is the same as in ``CpuWaitResetCollector``.
+    """
 
     mid_batch_reset = False
 
@@ -121,6 +129,9 @@ class GpuWaitResetCollector(DecorrelatingStartCollector):
 
 
 class GpuEvalCollector(BaseEvalCollector):
+    """Offline agent evaluation collector which communicates observations
+    to an action-server, which in turn provides the agent's actions.
+    """
 
     def collect_evaluation(self, itr):
         """Param itr unused."""
