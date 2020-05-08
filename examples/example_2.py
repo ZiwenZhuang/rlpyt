@@ -15,7 +15,7 @@ from rlpyt.envs.gym import make as gym_make
 from rlpyt.algos.qpg.sac import SAC
 from rlpyt.agents.qpg.sac_agent import SacAgent
 from rlpyt.runners.minibatch_rl import MinibatchRlEval
-from rlpyt.utils.logging.context import logger_context
+from exptools.logging.context import logger_context
 
 
 def build_and_train(env_id="Hopper-v3", run_ID=0, cuda_idx=None):

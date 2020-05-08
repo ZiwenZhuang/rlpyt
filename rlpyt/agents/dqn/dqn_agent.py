@@ -7,7 +7,7 @@ from rlpyt.agents.base import BaseAgent, AgentStep
 from rlpyt.agents.dqn.epsilon_greedy import EpsilonGreedyAgentMixin
 from rlpyt.distributions.epsilon_greedy import EpsilonGreedy
 from rlpyt.utils.buffer import buffer_to
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from exptools.collections import namedarraytuple
 from rlpyt.models.utils import strip_ddp_state_dict
 

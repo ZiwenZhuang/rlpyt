@@ -6,7 +6,7 @@ from torch.nn.parallel import DistributedDataParallelCPU as DDPC
 from rlpyt.utils.quick_args import save__init__args
 from exptools.collections import namedarraytuple
 from rlpyt.utils.synchronize import RWLock
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.models.utils import strip_ddp_state_dict
 
 AgentInputs = namedarraytuple("AgentInputs",

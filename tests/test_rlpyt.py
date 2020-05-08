@@ -3,7 +3,7 @@ from rlpyt.envs.atari.atari_env import AtariEnv, AtariTrajInfo
 from rlpyt.algos.dqn.dqn import DQN
 from rlpyt.agents.dqn.atari.atari_dqn_agent import AtariDqnAgent
 from rlpyt.runners.minibatch_rl import MinibatchRl
-from rlpyt.utils.logging.context import logger_context
+from exptools.logging.context import logger_context
 
 
 def test_rlpyt_simple():

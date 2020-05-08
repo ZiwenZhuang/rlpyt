@@ -17,7 +17,7 @@ from rlpyt.envs.atari.atari_env import AtariEnv, AtariTrajInfo
 from rlpyt.algos.pg.a2c import A2C
 from rlpyt.agents.pg.atari import AtariFfAgent
 from rlpyt.runners.minibatch_rl import MinibatchRl
-from rlpyt.utils.logging.context import logger_context
+from exptools.logging.context import logger_context
 
 
 def build_and_train(game="pong", run_ID=0, cuda_idx=None, sample_mode="serial", n_parallel=2):

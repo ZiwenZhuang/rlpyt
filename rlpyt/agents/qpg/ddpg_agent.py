@@ -7,7 +7,7 @@ from rlpyt.agents.base import BaseAgent, AgentStep
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.distributions.gaussian import Gaussian, DistInfo
 from rlpyt.utils.buffer import buffer_to
-from rlpyt.utils.logging import logger
+from exptools.logging import logger
 from rlpyt.models.qpg.mlp import MuMlpModel, QofMuMlpModel
 from rlpyt.models.utils import update_state_dict
 from exptools.collections import namedarraytuple
